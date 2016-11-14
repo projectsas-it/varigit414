@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
 
 /*
  *  Linux logo to be displayed on boot
@@ -74,6 +73,10 @@ const struct linux_logo * __ref fb_find_logo(int depth)
 #ifdef CONFIG_LOGO_LINUX_CLUT224
 		/* Generic Linux logo */
 		logo = &logo_linux_clut224;
+#endif
+#ifdef CONFIG_LOGO_VARISCITE_CLUT224
+		/* Variscite Linux logo */
+		logo = &logo_variscite_clut224;
 #endif
 #ifdef CONFIG_LOGO_DEC_CLUT224
 		/* DEC Linux logo on MIPS/MIPS64 or ALPHA */
