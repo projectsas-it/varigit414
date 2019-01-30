@@ -829,10 +829,6 @@
 	};
 };
 
-&pcie_phy {
-	status = "okay";
-};
-
 &pcie {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pcie>;

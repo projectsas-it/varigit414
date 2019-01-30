@@ -44,6 +44,7 @@
 
 #include "imx7s.dtsi"
 #include <dt-bindings/reset/imx7-reset.h>
+#include "imx7d-pinfunc-lpsr.h"
 
 / {
 	cpus {
