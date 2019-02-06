@@ -69,6 +69,24 @@ static void imx_imx_snvs_check_for_events(unsigned long data)
 	}
 }
 
+static void imx_imx_snvs_check_for_release_events(unsigned long data)
+{
+       struct pwrkey_drv_data *pdata = (struct pwrkey_drv_data *) data;
+       struct input_dev *input = pdata->input;
+       u32 state;
+
+       /* interrupt only reports release of key so do not wait for state change */
+       state=1;
+       input_event(input, EV_KEY, pdata->keycode, state);
+       input_sync(input);
+       state=0;
+       input_event(input, EV_KEY, pdata->keycode, state);
+       input_sync(input);
+}
+
+
+
+
 static irqreturn_t imx_snvs_pwrkey_interrupt(int irq, void *dev_id)
 {
 	struct platform_device *pdev = dev_id;
@@ -133,6 +151,13 @@ static int imx_snvs_pwrkey_probe(struct platform_device *pdev)
 
 	/* clear the unexpected interrupt before driver ready */
 	regmap_write(pdata->snvs, SNVS_LPSR_REG, SNVS_LPSR_SPO);
+
+	if (of_property_read_bool(np, "key-release-only"))
+	        setup_timer(&pdata->check_timer,
+	                        imx_imx_snvs_check_for_release_events, (unsigned long) pdata);
+	else
+	        setup_timer(&pdata->check_timer,
+	                        imx_imx_snvs_check_for_events, (unsigned long) pdata);	
 
 	setup_timer(&pdata->check_timer,
 		    imx_imx_snvs_check_for_events, (unsigned long) pdata);
