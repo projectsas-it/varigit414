@@ -119,6 +119,7 @@ struct ds1307 {
 	unsigned long		flags;
 #define HAS_NVRAM	0		/* bit 0 == sysfs file active */
 #define HAS_ALARM	1		/* bit 1 == irq claimed */
+	struct i2c_client	*client;
 	struct device		*dev;
 	struct regmap		*regmap;
 	const char		*name;
@@ -1368,6 +1369,7 @@ static int ds1307_probe(struct i2c_client *client,
 	if (!ds1307)
 		return -ENOMEM;
 
+	ds1307->client	= client;
 	dev_set_drvdata(&client->dev, ds1307);
 	ds1307->dev = &client->dev;
 	ds1307->name = client->name;
