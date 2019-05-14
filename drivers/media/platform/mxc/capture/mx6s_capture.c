@@ -50,7 +50,7 @@
 #define MX6S_CAM_VERSION "0.0.1"
 #define MX6S_CAM_DRIVER_DESCRIPTION "i.MX6S_CSI"
 
-#define MAX_VIDEO_MEM 64
+#define MAX_VIDEO_MEM 160
 
 /* reset values */
 #define CSICR1_RESET_VAL	0x40000800
