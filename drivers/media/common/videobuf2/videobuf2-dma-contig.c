@@ -17,6 +17,9 @@
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/dma-mapping.h>
+#include <linux/of.h>
+
+#include <asm/cacheflush.h>
 
 #include <media/videobuf2-v4l2.h>
 #include <media/videobuf2-dma-contig.h>
@@ -37,6 +40,7 @@ struct vb2_dc_buf {
 	struct vb2_vmarea_handler	handler;
 	refcount_t			refcount;
 	struct sg_table			*sgt_base;
+	bool				inval_cache;
 
 	/* DMABUF related */
 	struct dma_buf_attachment	*db_attach;
@@ -109,10 +113,16 @@ static void vb2_dc_finish(void *buf_priv)
 	struct sg_table *sgt = buf->dma_sgt;
 
 	/* DMABUF exporter will flush the cache for us */
-	if (!sgt || buf->db_attach)
+	if (buf->db_attach)
 		return;
 
-	dma_sync_sg_for_cpu(buf->dev, sgt->sgl, sgt->orig_nents, buf->dma_dir);
+	if (sgt)
+		dma_sync_sg_for_cpu(buf->dev, sgt->sgl, sgt->orig_nents,
+				    buf->dma_dir);
+#ifdef CONFIG_ARM64
+	else if (buf->inval_cache)
+		__inval_dcache_area(buf->vaddr, buf->size);
+#endif
 }
 
 /*********************************************/
@@ -141,6 +151,8 @@ static void *vb2_dc_alloc(struct device *dev, unsigned long attrs,
 			  gfp_t gfp_flags)
 {
 	struct vb2_dc_buf *buf;
+	u64 prop_value;
+	int err;
 
 	if (WARN_ON(!dev))
 		return ERR_PTR(-EINVAL);
@@ -166,6 +178,14 @@ static void *vb2_dc_alloc(struct device *dev, unsigned long attrs,
 	buf->dev = get_device(dev);
 	buf->size = size;
 	buf->dma_dir = dma_dir;
+
+	err = of_property_read_u64(buf->dev->of_node, "bsl,dma-invalidate",
+				   &prop_value);
+	/* invalidate cache if buffer is too small */
+	buf->inval_cache = !err && (size < prop_value);
+	/* always invalidate cache if property doesn't provide a size limit */
+	buf->inval_cache |= err && err != -EINVAL;
+	dev_printk(KERN_DEBUG, dev, "Post DMA cache invalidation %s\n", buf->inval_cache ? "enabled" : "disabled");
 
 	buf->handler.refcount = &buf->refcount;
 	buf->handler.put = vb2_dc_put;
