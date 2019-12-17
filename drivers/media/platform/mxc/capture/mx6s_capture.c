@@ -902,6 +902,7 @@ static int mx6s_configure_csi(struct mx6s_csi_dev *csi_dev)
 		case V4L2_PIX_FMT_YUYV:
 			csi_dev->csi_two_8bit_sensor_mode = true;
 			cr18 |= BIT_MIPI_DATA_FORMAT_YUV422_8B;
+			cr18 |= BIT_MIPI_DOUBLE_CMPNT;
 			break;
 		case V4L2_PIX_FMT_SRGGB8:
 		case V4L2_PIX_FMT_SBGGR8:

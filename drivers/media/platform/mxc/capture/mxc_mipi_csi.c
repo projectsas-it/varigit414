@@ -484,6 +484,11 @@ static void __mipi_csis_set_format(struct csi_state *state)
 	/* Color format */
 	val = mipi_csis_read(state, MIPI_CSIS_ISPCONFIG_CH0);
 	val = (val & ~MIPI_CSIS_ISPCFG_FMT_MASK) | state->csis_fmt->fmt_reg;
+
+	/* Enable dual pixel mode for YUV422 */
+	if (mf->code == MEDIA_BUS_FMT_UYVY8_2X8)
+		val |= MIPI_CSIS_ISPCFG_DOUBLE_CMPNT;
+
 	mipi_csis_write(state, MIPI_CSIS_ISPCONFIG_CH0, val);
 
 	/* Pixel resolution */
