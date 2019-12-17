@@ -272,6 +272,18 @@ static struct mx6s_fmt formats[] = {
 		.pixelformat	= V4L2_PIX_FMT_SRGGB8,
 		.mbus_code	= MEDIA_BUS_FMT_SRGGB8_1X8,
 		.bpp		= 1,
+	}, {
+		.name		= "Grey 10bit",
+		.fourcc		= V4L2_PIX_FMT_Y10,
+		.pixelformat = V4L2_PIX_FMT_Y10,
+		.mbus_code	= MEDIA_BUS_FMT_Y10_1X10,
+		.bpp		= 2,
+	}, {
+		.name		= "RAW10 (SBGGR10)",
+		.fourcc		= V4L2_PIX_FMT_SBGGR10,
+		.pixelformat = V4L2_PIX_FMT_SBGGR10,
+		.mbus_code	= MEDIA_BUS_FMT_Y10_1X10,
+		.bpp		= 2,
 	}
 };
 
@@ -855,6 +867,10 @@ static int mx6s_configure_csi(struct mx6s_csi_dev *csi_dev)
 			/* For parallel 8-bit sensor input */
 			width = pix->width * 2;
 		break;
+	case V4L2_PIX_FMT_Y10:
+	case V4L2_PIX_FMT_SBGGR10:
+		width = pix->width;
+		break;
 	default:
 		pr_debug("   case not supported\n");
 		return -EINVAL;
@@ -864,6 +880,14 @@ static int mx6s_configure_csi(struct mx6s_csi_dev *csi_dev)
 	if (csi_dev->csi_mipi_mode == true) {
 		cr1 = csi_read(csi_dev, CSI_CSICR1);
 		cr1 &= ~BIT_GCLK_MODE;
+
+		if ((V4L2_PIX_FMT_SBGGR10 == csi_dev->fmt->pixelformat) ||
+			(V4L2_PIX_FMT_Y10 == csi_dev->fmt->pixelformat)) {
+			cr1 |= BIT_PIXEL_BIT;
+		} else {
+			cr1 &= ~BIT_PIXEL_BIT;
+		}
+
 		csi_write(csi_dev, cr1, CSI_CSICR1);
 
 		cr18 = csi_read(csi_dev, CSI_CSICR18);
@@ -878,6 +902,10 @@ static int mx6s_configure_csi(struct mx6s_csi_dev *csi_dev)
 		case V4L2_PIX_FMT_SRGGB8:
 		case V4L2_PIX_FMT_SBGGR8:
 			cr18 |= BIT_MIPI_DATA_FORMAT_RAW8;
+			break;
+		case V4L2_PIX_FMT_SBGGR10:
+		case V4L2_PIX_FMT_Y10:
+			cr18 |= BIT_MIPI_DATA_FORMAT_RAW10;
 			break;
 		default:
 			pr_debug("   fmt not supported\n");
