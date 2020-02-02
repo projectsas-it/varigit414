@@ -598,8 +598,11 @@ static void csi_dmareq_rff_enable(struct mx6s_csi_dev *csi_dev)
 	cr3 |= BIT_HRESP_ERR_EN;
 	cr3 &= ~BIT_RXFF_LEVEL;
 	cr3 |= 0x2 << 4;
-	if (csi_dev->csi_two_8bit_sensor_mode)
+	if (csi_dev->csi_two_8bit_sensor_mode) {
 		cr3 |= BIT_TWO_8BIT_SENSOR;
+	} else {
+		cr3 &= ~BIT_TWO_8BIT_SENSOR;
+	}
 
 	__raw_writel(cr3, csi_dev->regbase + CSI_CSICR3);
 	__raw_writel(cr2, csi_dev->regbase + CSI_CSICR2);
@@ -897,14 +900,17 @@ static int mx6s_configure_csi(struct mx6s_csi_dev *csi_dev)
 		switch (csi_dev->fmt->pixelformat) {
 		case V4L2_PIX_FMT_UYVY:
 		case V4L2_PIX_FMT_YUYV:
+			csi_dev->csi_two_8bit_sensor_mode = true;
 			cr18 |= BIT_MIPI_DATA_FORMAT_YUV422_8B;
 			break;
 		case V4L2_PIX_FMT_SRGGB8:
 		case V4L2_PIX_FMT_SBGGR8:
+			csi_dev->csi_two_8bit_sensor_mode = false;
 			cr18 |= BIT_MIPI_DATA_FORMAT_RAW8;
 			break;
 		case V4L2_PIX_FMT_SBGGR10:
 		case V4L2_PIX_FMT_Y10:
+			csi_dev->csi_two_8bit_sensor_mode = true;
 			cr18 |= BIT_MIPI_DATA_FORMAT_RAW10;
 			break;
 		default:
@@ -1948,19 +1954,6 @@ static const struct v4l2_async_notifier_operations mx6s_capture_async_ops = {
 	.unbind = subdev_notifier_unbind,
 };
 
-static int mx6s_csi_two_8bit_sensor_mode_sel(struct mx6s_csi_dev *csi_dev)
-{
-	struct device_node *np = csi_dev->dev->of_node;
-
-	if (of_get_property(np, "fsl,two-8bit-sensor-mode", NULL))
-		csi_dev->csi_two_8bit_sensor_mode = true;
-	else {
-		csi_dev->csi_two_8bit_sensor_mode = false;
-	}
-
-	return 0;
-}
-
 static int mx6sx_register_subdevs(struct mx6s_csi_dev *csi_dev)
 {
 	struct device_node *parent = csi_dev->dev->of_node;
@@ -2068,7 +2061,6 @@ static int mx6s_csi_probe(struct platform_device *pdev)
 	csi_dev->dev = dev;
 
 	mx6s_csi_mode_sel(csi_dev);
-	mx6s_csi_two_8bit_sensor_mode_sel(csi_dev);
 
 	of_id = of_match_node(mx6s_csi_dt_ids, csi_dev->dev->of_node);
 	if (!of_id)
