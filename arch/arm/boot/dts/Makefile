@@ -549,7 +549,6 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
 	imx6q-tx6q-11x0-mb7.dtb \
 	imx6q-udoo.dtb \
 	imx6q-utilite-pro.dtb \
-	imx6q-var-dt6customboard.dtb \
 	imx6q-wandboard.dtb \
 	imx6q-wandboard-revb1.dtb \
 	imx6q-wandboard-revd1.dtb \
@@ -627,6 +626,14 @@ dtb-$(CONFIG_SOC_IMX6UL) += \
 	imx6ul-tx6ul-0010.dtb \
 	imx6ul-tx6ul-0011.dtb \
 	imx6ul-tx6ul-mainboard.dtb \
+	imx6ul-var-dart-6ulcustomboard-emmc-sd-card.dtb \
+	imx6ul-var-dart-6ulcustomboard-emmc-wifi.dtb \
+	imx6ul-var-dart-6ulcustomboard-nand-sd-card.dtb \
+	imx6ul-var-dart-6ulcustomboard-nand-wifi.dtb \
+	imx6ul-var-som-concerto-board-emmc-sd-card.dtb \
+	imx6ul-var-som-concerto-board-emmc-wifi.dtb \
+	imx6ul-var-som-concerto-board-nand-sd-card.dtb \
+	imx6ul-var-som-concerto-board-nand-wifi.dtb \
 	imx6ull-14x14-evk.dtb \
 	imx6ull-14x14-evk-emmc.dtb \
 	imx6ull-14x14-evk-btwifi.dtb \
@@ -641,6 +648,22 @@ dtb-$(CONFIG_SOC_IMX6UL) += \
 	imx6ull-phytec-segin-ff-rdk-nand.dtb \
 	imx6ull-phytec-segin-ff-rdk-emmc.dtb \
 	imx6ull-phytec-segin-lc-rdk-nand.dtb \
+	imx6ull-var-dart-6ulcustomboard-emmc-sd-card.dtb \
+	imx6ull-var-dart-6ulcustomboard-emmc-wifi.dtb \
+	imx6ull-var-dart-6ulcustomboard-nand-sd-card.dtb \
+	imx6ull-var-dart-6ulcustomboard-nand-wifi.dtb \
+	imx6ull-var-som-concerto-board-emmc-sd-card.dtb \
+	imx6ull-var-som-concerto-board-emmc-wifi.dtb \
+	imx6ull-var-som-concerto-board-nand-sd-card.dtb \
+	imx6ull-var-som-concerto-board-nand-wifi.dtb \
+	imx6ulz-var-dart-6ulcustomboard-emmc-sd-card.dtb \
+	imx6ulz-var-dart-6ulcustomboard-emmc-wifi.dtb \
+	imx6ulz-var-dart-6ulcustomboard-nand-sd-card.dtb \
+	imx6ulz-var-dart-6ulcustomboard-nand-wifi.dtb \
+	imx6ulz-var-som-concerto-board-emmc-sd-card.dtb \
+	imx6ulz-var-som-concerto-board-emmc-wifi.dtb \
+	imx6ulz-var-som-concerto-board-nand-sd-card.dtb \
+	imx6ulz-var-som-concerto-board-nand-wifi.dtb \
 	imx6ulz-14x14-evk.dtb \
 	imx6ulz-14x14-evk-btwifi.dtb \
 	imx6ulz-14x14-evk-gpmi-weim.dtb \
