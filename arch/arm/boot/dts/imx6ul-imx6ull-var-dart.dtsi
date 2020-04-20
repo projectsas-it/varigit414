@@ -68,11 +68,6 @@
 	};
 };
 
-&adc1 {
-	vref-supply = <&touch_3v3_regulator>;
-	status = "okay";
-};
-
 &clks {
 	/* ref_clk for micrel ethernet phy */
 	rmii_ref_clk: rmii_ref_clk_grp {

@@ -302,14 +302,6 @@
 	status = "okay";
 };
 
-/* ttymxc4 UART */
-&uart5 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart5>;
-	fsl,uart-has-rtscts;
-	status = "okay";
-};
-
 &usbotg1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usb_otg1_id>;
