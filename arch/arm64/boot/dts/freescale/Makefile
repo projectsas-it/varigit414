@@ -197,7 +197,9 @@ dtb-$(CONFIG_ARCH_S32) += s32v234-evb.dtb \
 
 dtb-$(CONFIG_ARCH_MXC) += \
 	imx8mm-evk-basler-camera.dtb \
-	imx8mm-ddr4-evk-basler-camera.dtb
+	imx8mm-ddr4-evk-basler-camera.dtb \
+	imx8mm-evk-basler-camera-1lane.dtb \
+	imx8mm-ddr4-evk-basler-camera-1lane.dtb
 dtb-$(CONFIG_ARCH_MXC) += \
 	imx8mq-evk-basler-camera.dtb \
 	imx8mq-evk-basler-camera-csi1.dtb \
