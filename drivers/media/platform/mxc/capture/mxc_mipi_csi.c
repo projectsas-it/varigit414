@@ -287,6 +287,8 @@ struct csi_state {
 	struct csis_pktbuf pkt_buf;
 	struct mipi_csis_event events[MIPI_CSIS_NUM_EVENTS];
 
+	unsigned long BaslerIrq;
+
 	struct v4l2_async_subdev    asd;
 	struct v4l2_async_notifier  subdev_notifier;
 	struct v4l2_async_subdev    *async_subdevs[2];
@@ -658,6 +660,9 @@ static void mipi_csis_clear_counters(struct csi_state *state)
 	spin_lock_irqsave(&state->slock, flags);
 	for (i = 0; i < MIPI_CSIS_NUM_EVENTS; i++)
 		state->events[i].counter = 0;
+
+	state->BaslerIrq = 0;
+
 	spin_unlock_irqrestore(&state->slock, flags);
 }
 
@@ -667,6 +672,8 @@ static void mipi_csis_log_counters(struct csi_state *state, bool non_errors)
 	unsigned long flags;
 
 	spin_lock_irqsave(&state->slock, flags);
+
+	v4l2_info(&state->mipi_sd, "--> Total %ld IRQ events\n", state->BaslerIrq);
 
 	for (i--; i >= 0; i--) {
 		if (state->events[i].counter > 0 || debug)
@@ -906,6 +913,8 @@ static irqreturn_t mipi_csis_irq_handler(int irq, void *dev_id)
 	status = mipi_csis_read(state, MIPI_CSIS_INTSRC);
 
 	spin_lock_irqsave(&state->slock, flags);
+
+	state->BaslerIrq++;
 
 	if ((status & MIPI_CSIS_INTSRC_NON_IMAGE_DATA) && pktbuf->data) {
 		u32 offset;
