@@ -3947,10 +3947,10 @@ fec_probe(struct platform_device *pdev)
 	if (ret)
 		goto failed_mii_init;
 
-	/* Carrier starts down, phylib will bring it up */
+	/* Carrier starts down, phylib will bring it up
 	netif_carrier_off(ndev);
 	fec_enet_clk_enable(ndev, false);
-	pinctrl_pm_select_sleep_state(&pdev->dev);
+	pinctrl_pm_select_sleep_state(&pdev->dev); */
 
 	ret = register_netdev(ndev);
 	if (ret)
