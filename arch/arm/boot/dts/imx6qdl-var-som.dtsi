@@ -89,13 +89,13 @@
 		simple-audio-card,widgets = "Headphone", "Headphone Jack",
 					    "Line", "Line In Jack",
 					    "Microphone", "DMic";
-#if 0
+#if 1
 		simple-audio-card,routing = "Headphone Jack", "HPLOUT",
 					    "Headphone Jack", "HPROUT",
 					    "LINE1L", "Line In Jack",
 					    "LINE1R", "Line In Jack",
 					    "DMIC", "DMic";
-#else
+#else /* sample use of gpio controlled amplifier  */
 		simple-audio-card,routing = "Headphone Jack", "Amplifier",
 					    "Amplifier", "HPLOUT",
 					    "Amplifier", "HPROUT",
