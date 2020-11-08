@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  *
- * Settings for VAR-SoloCustomBoard
+ * Settings for VAR-MX6CustomBoard
  */
 
 / {
@@ -23,43 +23,11 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_gpio_keys>;
 
-		home {
-			label = "Home";
-			gpios = <&gpio5 14 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_HOMEPAGE>; /* KEY_HOMEPAGE */
-			gpio-key,wakeup;
-		};
-
 		back {
 			label = "Back";
 			gpios = <&gpio5 20 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_BACK>; /* KEY_BACK */
 			gpio-key,wakeup;
-		};
-
-		menu {
-			label = "Menu";
-			gpios = <&gpio5 12 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_MENU>; /* KEY_MENU */
-			gpio-key,wakeup;
-		};
-	};
-
-	gpio-leds {
-		compatible = "gpio-leds";
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_gpio_leds>;
-
-		led1 {
-			label = "Led1";
-			gpios = <&gpio5 15 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "heartbeat";
-		};
-
-		led2 {
-			label = "Led2";
-			gpios = <&gpio5 16 GPIO_ACTIVE_HIGH>;
-			default-state = "off";
 		};
 	};
 };
@@ -109,12 +77,8 @@
 		reg = <0x38>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_ft5x06>;
-		interrupt-parent = <&gpio5>;
-		interrupts = <17 0>;
-		touchscreen-size-x = <800>;
-		touchscreen-size-y = <480>;
-		touchscreen-inverted-x;
-		touchscreen-inverted-y;
+		interrupt-parent = <&gpio3>;
+		interrupts = <7 0>;
 		status = "disabled";
 	};
 
@@ -136,22 +100,14 @@
 
 		pinctrl_ft5x06: ft5x06grp {
 			fsl,pins = <
-				MX6QDL_PAD_DISP0_DAT23__GPIO5_IO17	0x80000000
+				MX6QDL_PAD_EIM_DA7__GPIO3_IO07	0x80000000
 			>;
 		};
 
 		pinctrl_gpio_keys: gpiokeysgrp {
 			fsl,pins = <
-				MX6QDL_PAD_DISP0_DAT18__GPIO5_IO12	0x80000000
-				MX6QDL_PAD_DISP0_DAT20__GPIO5_IO14	0x80000000
-				MX6QDL_PAD_CSI0_DATA_EN__GPIO5_IO20	0x80000000
-			>;
-		};
-
-		pinctrl_gpio_leds: gpioledsgrp {
-			fsl,pins = <
-				MX6QDL_PAD_DISP0_DAT21__GPIO5_IO15	0x80000000
-				MX6QDL_PAD_DISP0_DAT22__GPIO5_IO16	0x80000000
+				/* user button */
+				MX6QDL_PAD_CSI0_DATA_EN__GPIO5_IO20 	0x17059
 			>;
 		};
 
@@ -178,6 +134,14 @@
 			>;
 		};
 
+		pinctrl_pcie: pciegrp {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_D21__GPIO3_IO21		0x80000000 /* disable# */
+				MX6QDL_PAD_EIM_D22__GPIO3_IO22		0x80000000 /* wake# */
+				MX6QDL_PAD_DISP0_DAT19__GPIO5_IO13	0x80000000 /* reset# */
+			>;
+		};
+
 		pinctrl_pwm2: pwm2grp {
 			fsl,pins = <
 				MX6QDL_PAD_DISP0_DAT9__PWM2_OUT		0x1b0b1
@@ -194,51 +158,28 @@
 			>;
 		};
 
-		pinctrl_usbotg_1: usbotggrp-1 {
+		pinctrl_usdhc2_gpio: usdhc2gpiogrp {
 			fsl,pins = <
-				MX6QDL_PAD_GPIO_1__USB_OTG_ID		0x17059
-			>;
-		};
-
-		pinctrl_usb_h1_vbus: usbh1vbusgrp {
-			fsl,pins = <
+				/* SDMMC2 CD/WP */
+				MX6QDL_PAD_KEY_COL4__GPIO4_IO14		0x80000000
 				MX6QDL_PAD_KEY_ROW4__GPIO4_IO15		0x80000000
 			>;
 		};
-
-		pinctrl_usb_otg_vbus: usbotgvbusgrp {
-			fsl,pins = <
-				MX6QDL_PAD_EIM_D22__GPIO3_IO22		0x80000000
-			>;
-		};
-
-		pinctrl_usdhc2_gpio: usdhc2gpiogrp {
-			fsl,pins = <
-				/* SDMMC2 CD */
-				MX6QDL_PAD_KEY_COL4__GPIO4_IO14		0x80000000
-			>;
-		};
 	};
+};
+
+&pcie {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pcie>;
+	disable-gpio  = <&gpio3 21 GPIO_ACTIVE_LOW>;
+	reset-gpio    = <&gpio5 13 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 &pwm2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm2>;
 	status = "okay";
-};
-
-&reg_usb_h1_vbus {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_usb_h1_vbus>;
-	gpio = <&gpio4 15 0>;
-	enable-active-high;
-};
-
-&reg_usb_otg_vbus {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_usb_otg_vbus>;
-	gpio = <&gpio3 22 0>;
-	enable-active-high;
 };
 
 /* ttymxc2 UART */
@@ -249,16 +190,11 @@
 	status = "okay";
 };
 
-&usbotg {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_usbotg_1>;
-	dr_mode = "otg"; /* Use "host" if you would like to use the USB0 type A connector */
-};
-
 &usdhc2 {	/* uSDHC2, MMC/SD card */
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usdhc2>, <&pinctrl_usdhc2_gpio>;
 	cd-gpios = <&gpio4 14 GPIO_ACTIVE_LOW>;
+	wp-gpios = <&gpio4 15 GPIO_ACTIVE_HIGH>;
 	no-1-8-v;
 	keep-power-in-suspend;
 	enable-sdio-wakeup;

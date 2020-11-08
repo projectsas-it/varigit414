@@ -7,9 +7,8 @@
  */
 
 #include "imx6qp-var-som.dtsi"
-#include "imx6qdl-var-solocb-dt6cb-displays.dtsi"
-#include "imx6qdl-var-solocb-buttons.dtsi"
 #include "imx6qdl-var-solocb-misc.dtsi"
+#include "imx6qdl-var-solocb-dt6cb-displays.dtsi"
 
 / {
 	model = "Variscite i.MX6 QUAD PLUS VAR-SOM-MX6 SoloCustomBoard";

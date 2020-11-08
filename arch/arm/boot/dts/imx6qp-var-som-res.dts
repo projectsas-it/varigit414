@@ -7,5 +7,5 @@
  */
 
 #include "imx6qp-var-som.dtsi"
+#include "imx6qdl-var-mx6cb-misc.dtsi"
 #include "imx6qdl-var-mx6cb-rdisplay.dtsi"
-#include "imx6qdl-var-mx6cb-buttons.dtsi"

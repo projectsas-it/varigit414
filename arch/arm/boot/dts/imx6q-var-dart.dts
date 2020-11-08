@@ -10,8 +10,8 @@
 
 #include "imx6q.dtsi"
 #include "imx6qdl-var-dart.dtsi"
+#include "imx6qdl-var-dt6cb-misc.dtsi"
 #include "imx6qdl-var-solocb-dt6cb-displays.dtsi"
-#include "imx6qdl-var-dt6cb-buttons.dtsi"
 
 / {
 	model = "Variscite i.MX6 Quad/Dual DART-MX6";
@@ -45,11 +45,6 @@
 	lvds-channel@1 {
 		crtc = "ipu2-di1";
 	};
-};
-
-&touch {
-	interrupt-parent = <&gpio1>;
-	interrupts = <4 0>;
 };
 
 &mxcfb1 {
