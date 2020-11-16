@@ -1080,6 +1080,11 @@
 	pm-ignore-notify;
 	vmmc-supply = <&wlreg_on>;
 	status = "okay";
+
+	brcmf: bcrmf@1 {
+		reg = <1>;
+		compatible = "brcm,bcm4329-fmac";
+	};
 };
 
 &usdhc3 {
