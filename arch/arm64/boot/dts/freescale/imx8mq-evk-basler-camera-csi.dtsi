@@ -59,6 +59,7 @@
 
 /delete-node/ &ov5640_mipi;
 /delete-node/ &ov5640_mipi2;
+/delete-node/ &pinctrl_csi_rst;
 
 &i2c1 {
 	basler_camera_mipi2: basler_camera_mipi@36 {
@@ -75,12 +76,13 @@
 				data-lanes = <1 2 3 4>;
 				clock-lanes = <0>;
 				link-frequencies = /bits/ 64 <248000000>;
+				pinctrl-0 = <&pinctrl_camera_trigger>;
 			};
 		};
 	};
 };
 
-&i2c2{
+&i2c2 {
 	clock-frequency = <400000>;
 
 	basler_camera_mipi1: basler_camera_mipi@36 {
@@ -97,7 +99,16 @@
 				data-lanes = <1 2 3 4>;
 				clock-lanes = <0>;
 				link-frequencies = /bits/ 64 <248000000>;
+				pinctrl-0 = <&pinctrl_camera_trigger>;
 			};
 		};
+	};
+};
+
+&iomuxc {
+	pinctrl_camera_trigger: cameratriggergrp {
+		fsl,pins = <
+			MX8MQ_IOMUXC_GPIO1_IO15_GPIO1_IO15	0x01
+		>;
 	};
 };
