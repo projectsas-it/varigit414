@@ -132,6 +132,7 @@
 #define BIT_MIPI_DATA_FORMAT_RAW8		(0x2a << 25)
 #define BIT_MIPI_DATA_FORMAT_RAW10		(0x2b << 25)
 #define BIT_MIPI_DATA_FORMAT_YUV422_8B	(0x1e << 25)
+#define BIT_MIPI_DATA_FORMAT_YUV420_8B (0x18 << 25)
 #define BIT_MIPI_DATA_FORMAT_MASK	(0x3F << 25)
 #define BIT_MIPI_DATA_FORMAT_OFFSET	25
 #define BIT_DATA_FROM_MIPI		(0x1 << 22)
@@ -312,6 +313,19 @@ static struct mx6s_fmt formats[] = {
 		.pixelformat = V4L2_PIX_FMT_SBGGR10,
 		.mbus_code	= MEDIA_BUS_FMT_Y10_1X10,
 		.bpp		= 16,
+	}, {
+		/*
+		 * The bridge actually saves YUV420 images
+		 * in an unsupported interleaved format
+		 * (even lines = YY, odd lines = UYVY).
+		 * We just use V4L2_PIX_FMT_NV12 here
+		 * due to the lack of a matching V4L2 pixfmt.
+		 */
+		.name		= "YUV 420",
+		.fourcc		= V4L2_PIX_FMT_NV12,
+		.pixelformat	= V4L2_PIX_FMT_NV12,
+		.mbus_code	= MEDIA_BUS_FMT_UYVY8_1_5X8,
+		.bpp		= 12,
 	}
 };
 
@@ -920,6 +934,7 @@ static int mx6s_configure_csi(struct mx6s_csi_dev *csi_dev)
 	case V4L2_PIX_FMT_YUV32:
 	case V4L2_PIX_FMT_SRGGB8:
 	case V4L2_PIX_FMT_SBGGR8:
+	case V4L2_PIX_FMT_NV12:
 		width = pix->width;
 		break;
 	case V4L2_PIX_FMT_UYVY:
@@ -962,6 +977,11 @@ static int mx6s_configure_csi(struct mx6s_csi_dev *csi_dev)
 		case V4L2_PIX_FMT_YUYV:
 			csi_dev->csi_two_8bit_sensor_mode = true;
 			cr18 |= BIT_MIPI_DATA_FORMAT_YUV422_8B;
+			cr18 |= BIT_MIPI_DOUBLE_CMPNT;
+			break;
+		case V4L2_PIX_FMT_NV12:
+			csi_dev->csi_two_8bit_sensor_mode = true;
+			cr18 |= BIT_MIPI_DATA_FORMAT_YUV420_8B;
 			cr18 |= BIT_MIPI_DOUBLE_CMPNT;
 			break;
 		case V4L2_PIX_FMT_SRGGB8:
@@ -1545,8 +1565,14 @@ static int mx6s_vidioc_try_fmt_vid_cap(struct file *file, void *priv,
 	if (pix->field != V4L2_FIELD_INTERLACED)
 		pix->field = V4L2_FIELD_NONE;
 
-	pix->bytesperline = DIV_ROUND_UP(fmt->bpp * pix->width, 8);
-	pix->sizeimage = pix->bytesperline * pix->height;
+	if (fmt->pixelformat == V4L2_PIX_FMT_NV12) {
+		pix->bytesperline = pix->width;
+		pix->sizeimage = DIV_ROUND_UP(
+			fmt->bpp * pix->height * pix->width, 8);
+	} else {
+		pix->bytesperline = DIV_ROUND_UP(fmt->bpp * pix->width, 8);
+		pix->sizeimage = pix->bytesperline * pix->height;
+	}
 
 	pix->colorspace = V4L2_COLORSPACE_SRGB;
 	pix->ycbcr_enc = V4L2_MAP_YCBCR_ENC_DEFAULT(pix->colorspace);

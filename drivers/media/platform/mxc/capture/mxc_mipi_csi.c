@@ -155,6 +155,7 @@ MODULE_PARM_DESC(debug, "Debug level (0-2)");
 #define MIPI_CSIS_ISPCFG_DOUBLE_CMPNT        (1 << 12)
 #define MIPI_CSIS_ISPCFG_ALIGN_32BIT         (1 << 11)
 #define MIPI_CSIS_ISPCFG_FMT_YCBCR422_8BIT   (0x1e << 2)
+#define MIPI_CSIS_ISPCFG_FMT_YUV420_8BIT   (0x18 << 2)
 #define MIPI_CSIS_ISPCFG_FMT_RAW8		(0x2a << 2)
 #define MIPI_CSIS_ISPCFG_FMT_RAW10		(0x2b << 2)
 #define MIPI_CSIS_ISPCFG_FMT_RAW12		(0x2c << 2)
@@ -335,6 +336,10 @@ static const struct csis_pix_format mipi_csis_formats[] = {
 		.code = MEDIA_BUS_FMT_Y10_1X10,
 		.fmt_reg = MIPI_CSIS_ISPCFG_FMT_RAW10,
 		.data_alignment = 10,
+	}, {
+		.code	= MEDIA_BUS_FMT_UYVY8_1_5X8,
+		.fmt_reg = MIPI_CSIS_ISPCFG_FMT_YUV420_8BIT,
+		.data_alignment = 16
 	}
 };
 
@@ -487,8 +492,8 @@ static void __mipi_csis_set_format(struct csi_state *state)
 	val = mipi_csis_read(state, MIPI_CSIS_ISPCONFIG_CH0);
 	val = (val & ~MIPI_CSIS_ISPCFG_FMT_MASK) | state->csis_fmt->fmt_reg;
 
-	/* Enable dual pixel mode for YUV422 */
-	if (mf->code == MEDIA_BUS_FMT_UYVY8_2X8)
+	/* Enable dual pixel mode for YUV422 and YUV420 */
+	if (mf->code == MEDIA_BUS_FMT_UYVY8_2X8 || mf->code == MEDIA_BUS_FMT_UYVY8_1_5X8)
 		val |= MIPI_CSIS_ISPCFG_DOUBLE_CMPNT;
 
 	mipi_csis_write(state, MIPI_CSIS_ISPCONFIG_CH0, val);
