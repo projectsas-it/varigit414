@@ -275,43 +275,43 @@ static struct mx6s_fmt formats[] = {
 		.fourcc		= V4L2_PIX_FMT_UYVY,
 		.pixelformat	= V4L2_PIX_FMT_UYVY,
 		.mbus_code	= MEDIA_BUS_FMT_UYVY8_2X8,
-		.bpp		= 2,
+		.bpp		= 16,
 	}, {
 		.name		= "YUYV-16",
 		.fourcc		= V4L2_PIX_FMT_YUYV,
 		.pixelformat	= V4L2_PIX_FMT_YUYV,
 		.mbus_code	= MEDIA_BUS_FMT_YUYV8_2X8,
-		.bpp		= 2,
+		.bpp		= 16,
 	}, {
 		.name		= "YUV32 (X-Y-U-V)",
 		.fourcc		= V4L2_PIX_FMT_YUV32,
 		.pixelformat	= V4L2_PIX_FMT_YUV32,
 		.mbus_code	= MEDIA_BUS_FMT_AYUV8_1X32,
-		.bpp		= 4,
+		.bpp		= 32,
 	}, {
 		.name		= "RAWRGB8 (SBGGR8)",
 		.fourcc		= V4L2_PIX_FMT_SBGGR8,
 		.pixelformat	= V4L2_PIX_FMT_SBGGR8,
 		.mbus_code	= MEDIA_BUS_FMT_SBGGR8_1X8,
-		.bpp		= 1,
+		.bpp		= 8,
 	}, {
 		.name		= "RAWRGB8 (SRGGB8)",
 		.fourcc		= V4L2_PIX_FMT_SRGGB8,
 		.pixelformat	= V4L2_PIX_FMT_SRGGB8,
 		.mbus_code	= MEDIA_BUS_FMT_SRGGB8_1X8,
-		.bpp		= 1,
+		.bpp		= 8,
 	}, {
 		.name		= "Grey 10bit",
 		.fourcc		= V4L2_PIX_FMT_Y10,
 		.pixelformat = V4L2_PIX_FMT_Y10,
 		.mbus_code	= MEDIA_BUS_FMT_Y10_1X10,
-		.bpp		= 2,
+		.bpp		= 16,
 	}, {
 		.name		= "RAW10 (SBGGR10)",
 		.fourcc		= V4L2_PIX_FMT_SBGGR10,
 		.pixelformat = V4L2_PIX_FMT_SBGGR10,
 		.mbus_code	= MEDIA_BUS_FMT_Y10_1X10,
-		.bpp		= 2,
+		.bpp		= 16,
 	}
 };
 
@@ -1545,8 +1545,8 @@ static int mx6s_vidioc_try_fmt_vid_cap(struct file *file, void *priv,
 	if (pix->field != V4L2_FIELD_INTERLACED)
 		pix->field = V4L2_FIELD_NONE;
 
-	pix->sizeimage = fmt->bpp * pix->height * pix->width;
-	pix->bytesperline = fmt->bpp * pix->width;
+	pix->bytesperline = DIV_ROUND_UP(fmt->bpp * pix->width, 8);
+	pix->sizeimage = pix->bytesperline * pix->height;
 
 	pix->colorspace = V4L2_COLORSPACE_SRGB;
 	pix->ycbcr_enc = V4L2_MAP_YCBCR_ENC_DEFAULT(pix->colorspace);
