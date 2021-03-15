@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright 2017 NXP
+ * Copyright 2018-2021 Variscite Ltd.
+ */
+
+#include "imx8mq-var-dart-dt8mcustomboard-basler.dtsi"
+
+&gpio4 {
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_basler>;
+
+	cam1_pwr_hog {
+		gpio-hog;
+		gpios = <8 0>;
+		output-high;
+		line-name = "cam1_pwr";
+	};
+
+	cam2_pwr_hog {
+		gpio-hog;
+		gpios = <9 0>;
+		output-high;
+		line-name = "cam2_pwr";
+	};
+};
+
+&iomuxc {
+	pinctrl_basler: baslergrp {
+		fsl,pins = <
+			MX8MQ_IOMUXC_SAI1_RXD6_GPIO4_IO8		0x19
+			MX8MQ_IOMUXC_SAI1_RXD7_GPIO4_IO9		0x19
+		>;
+	};
+};
