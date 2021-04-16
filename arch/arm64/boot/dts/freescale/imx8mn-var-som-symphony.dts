@@ -97,6 +97,7 @@
 	pinctrl_captouch: captouchgrp {
 		fsl,pins = <
 			MX8MN_IOMUXC_SPDIF_RX_GPIO5_IO4			0xc0
+			MX8MN_IOMUXC_SAI2_RXD0_GPIO4_IO23			0xc0
 		>;
 	};
 
@@ -308,16 +309,17 @@
 
 &i2c3 {
 	/* Capacitive touch controller */
-	ft5x06_ts: ft5x06_ts@38 {
+	egalax_i2c@2a {
+		compatible = "hid-over-i2c";
+		reg = <0x2a>;
 		status = "okay";
-		compatible = "edt,edt-ft5206";
-		reg = <0x38>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_captouch>;
-		interrupt-parent = <&gpio5>;
-		interrupts = <4 IRQ_TYPE_EDGE_FALLING>;
-		touchscreen-size-x = <800>;
-		touchscreen-size-y = <480>;
+		hid-descr-addr = <0x000f>;
+		interrupt-parent = <&gpio4>;
+		interrupts = <23 IRQ_TYPE_LEVEL_LOW>;
+		touchscreen-size-x = <1024>;
+		touchscreen-size-y = <600>;
 		touchscreen-inverted-x;
 		touchscreen-inverted-y;
 		wakeup-source;
