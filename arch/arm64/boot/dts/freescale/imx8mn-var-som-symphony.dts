@@ -309,10 +309,25 @@
 
 &i2c3 {
 	/* Capacitive touch controller */
+	ar1021@4d {
+		compatible = "microchip,ar1021-i2c";
+		reg = <0x4d>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_captouch>;
+		interrupt-parent = <&gpio4>;
+		interrupts = <23 IRQ_TYPE_LEVEL_HIGH>;
+		touchscreen-size-x = <1024>;
+		touchscreen-size-y = <600>;
+		touchscreen-inverted-x;
+		touchscreen-inverted-y;
+		wakeup-source;
+	};
+
+	/* Capacitive touch controller */
 	egalax_i2c@2a {
 		compatible = "hid-over-i2c";
 		reg = <0x2a>;
-		status = "okay";
+		status = "disabled";
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_captouch>;
 		hid-descr-addr = <0x000f>;
