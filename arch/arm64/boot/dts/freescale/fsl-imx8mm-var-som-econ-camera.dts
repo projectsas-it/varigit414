@@ -1,0 +1,2 @@
+#include "fsl-imx8mm-var-som.dts"
+#include "fsl-imx8mm-var-som-econ-camera.dtsi"

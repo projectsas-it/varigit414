@@ -1,0 +1,2 @@
+#include "imx8mm-var-som-symphony-legacy.dts"
+#include "imx8mm-var-som-econ-camera.dtsi"
