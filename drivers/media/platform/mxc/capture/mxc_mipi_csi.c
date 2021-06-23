@@ -278,6 +278,7 @@ struct csi_state {
 	u32 num_lanes;
 	u32 max_num_lanes;
 	u8 wclk_ext;
+	u32 pixel_mode;
 
 	const struct csis_pix_format *csis_fmt;
 	struct v4l2_mbus_framefmt format;
@@ -514,8 +515,8 @@ static void mipi_csis_set_params(struct csi_state *state)
 		val |= MIPI_CSIS_ISPCFG_ALIGN_32BIT;
 	else /* Normal output */
 		val &= ~MIPI_CSIS_ISPCFG_ALIGN_32BIT;
-	if (of_property_read_bool(np, "cam-csi-bridge")) //AR1335?
-		val |= 1 << 12; /*Dual Pixel Mode */
+	val &= ~(3 << 12); /*clear Pixel Mode */
+	val |= state->pixel_mode << 12; /*set Pixel Mode */
 	mipi_csis_write(state, MIPI_CSIS_ISPCONFIG_CH0, val);
 
 	val = (0 << MIPI_CSIS_ISPSYNC_HSYNC_LINTV_OFFSET) |
@@ -1051,6 +1052,11 @@ static int mipi_csis_parse_dt(struct platform_device *pdev,
 
 	of_property_read_u32(node, "data-lanes",
 					&state->num_lanes);
+
+	if (of_property_read_u32(node, "pixel-mode",
+				 &state->pixel_mode) || (state->pixel_mode > 2))
+		state->pixel_mode = 0;
+
 	of_node_put(node);
 
 	return 0;
