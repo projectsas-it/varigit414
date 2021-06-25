@@ -279,6 +279,7 @@ struct csi_state {
 	u32 num_lanes;
 	u32 max_num_lanes;
 	u8 wclk_ext;
+	u32 pixel_mode;
 
 	const struct csis_pix_format *csis_fmt;
 	struct v4l2_mbus_framefmt format;
@@ -487,10 +488,6 @@ static void __mipi_csis_set_format(struct csi_state *state)
 	val = mipi_csis_read(state, MIPI_CSIS_ISPCONFIG_CH0);
 	val = (val & ~MIPI_CSIS_ISPCFG_FMT_MASK) | state->csis_fmt->fmt_reg;
 
-	/* Enable dual pixel mode for YUV422 */
-	if (mf->code == MEDIA_BUS_FMT_UYVY8_2X8)
-		val |= MIPI_CSIS_ISPCFG_DOUBLE_CMPNT;
-
 	mipi_csis_write(state, MIPI_CSIS_ISPCONFIG_CH0, val);
 
 	/* Pixel resolution */
@@ -527,6 +524,8 @@ static void mipi_csis_set_params(struct csi_state *state)
 		val |= MIPI_CSIS_ISPCFG_ALIGN_32BIT;
 	else /* Normal output */
 		val &= ~MIPI_CSIS_ISPCFG_ALIGN_32BIT;
+	val &= ~(3 << 12); /*clear Pixel Mode */
+	val |= state->pixel_mode << 12; /*set Pixel Mode */
 	mipi_csis_write(state, MIPI_CSIS_ISPCONFIG_CH0, val);
 
 	val = (0 << MIPI_CSIS_ISPSYNC_HSYNC_LINTV_OFFSET) |
@@ -1032,6 +1031,9 @@ static int mipi_csis_parse_dt(struct platform_device *pdev,
 
 	of_property_read_u32(node, "data-lanes",
 					&state->num_lanes);
+	if (of_property_read_u32(node, "pixel-mode",
+				 &state->pixel_mode) || (state->pixel_mode > 2))
+		state->pixel_mode = 0;
 	of_node_put(node);
 
 	return 0;

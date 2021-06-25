@@ -386,6 +386,8 @@ struct mx6s_csi_dev {
 
 	bool csi_mipi_mode;
 	bool csi_two_8bit_sensor_mode;
+	bool yuv_double_component;
+	bool yu_swap;
 	const struct mx6s_csi_soc *soc;
 	struct mx6s_csi_mux csi_mux;
 
@@ -959,19 +961,32 @@ static int mx6s_configure_csi(struct mx6s_csi_dev *csi_dev)
 
 		switch (csi_dev->fmt->pixelformat) {
 		case V4L2_PIX_FMT_UYVY:
-		case V4L2_PIX_FMT_YUYV:
-			csi_dev->csi_two_8bit_sensor_mode = true;
+			if (csi_dev->yuv_double_component)
+			{
+				cr18 |= BIT_MIPI_DOUBLE_CMPNT;
+				cr18 &= ~BIT_MIPI_YU_SWAP;
+			}
 			cr18 |= BIT_MIPI_DATA_FORMAT_YUV422_8B;
-			cr18 |= BIT_MIPI_DOUBLE_CMPNT;
+			break;
+		case V4L2_PIX_FMT_YUYV:
+			if (csi_dev->yuv_double_component) {
+				cr18 |= BIT_MIPI_DOUBLE_CMPNT;
+				if (csi_dev->yu_swap) {
+					cr18 |= BIT_MIPI_YU_SWAP;
+				} else {
+					cr18 &= ~BIT_MIPI_YU_SWAP;
+				}
+			} else {
+				cr18 &= ~BIT_MIPI_DOUBLE_CMPNT;
+			}
+			cr18 |= BIT_MIPI_DATA_FORMAT_YUV422_8B;
 			break;
 		case V4L2_PIX_FMT_SRGGB8:
 		case V4L2_PIX_FMT_SBGGR8:
-			csi_dev->csi_two_8bit_sensor_mode = false;
 			cr18 |= BIT_MIPI_DATA_FORMAT_RAW8;
 			break;
 		case V4L2_PIX_FMT_SBGGR10:
 		case V4L2_PIX_FMT_Y10:
-			csi_dev->csi_two_8bit_sensor_mode = true;
 			cr18 |= BIT_MIPI_DATA_FORMAT_RAW10;
 			break;
 		default:
@@ -1237,7 +1252,7 @@ static irqreturn_t mx6s_csi_irq_handler(int irq, void *data)
 		csi_write(csi_dev, cr18, CSI_CSICR18);
 
 		csi_dev->skipframe = 1;
-		pr_debug("base address switching Change Err.\n");
+		pr_info("base address switching Change Err.\n");
 	}
 
 	if ((status & BIT_DMA_TSF_DONE_FB1) &&
@@ -2017,6 +2032,19 @@ static const struct v4l2_async_notifier_operations mx6s_capture_async_ops = {
 	.unbind = subdev_notifier_unbind,
 };
 
+static int mx6s_csi_two_8bit_sensor_mode_sel(struct mx6s_csi_dev *csi_dev)
+{
+	struct device_node *np = csi_dev->dev->of_node;
+
+	if (of_get_property(np, "fsl,two-8bit-sensor-mode", NULL))
+		csi_dev->csi_two_8bit_sensor_mode = true;
+	else {
+		csi_dev->csi_two_8bit_sensor_mode = false;
+	}
+
+	return 0;
+}
+
 static int mx6sx_register_subdevs(struct mx6s_csi_dev *csi_dev)
 {
 	struct device_node *parent = csi_dev->dev->of_node;
@@ -2124,6 +2152,12 @@ static int mx6s_csi_probe(struct platform_device *pdev)
 	csi_dev->dev = dev;
 
 	mx6s_csi_mode_sel(csi_dev);
+	mx6s_csi_two_8bit_sensor_mode_sel(csi_dev);
+
+	csi_dev->yuv_double_component =
+		of_property_read_bool(csi_dev->dev->of_node, "yuv-double-component");
+	csi_dev->yu_swap =
+		of_property_read_bool(csi_dev->dev->of_node, "yu-swap");
 
 	of_id = of_match_node(mx6s_csi_dt_ids, csi_dev->dev->of_node);
 	if (!of_id)
