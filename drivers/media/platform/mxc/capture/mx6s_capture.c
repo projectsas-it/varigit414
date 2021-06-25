@@ -1818,13 +1818,13 @@ static const struct v4l2_ioctl_ops mx6s_csi_ioctl_ops = {
 };
 
 static int subdev_notifier_bound(struct v4l2_async_notifier *notifier,
-			    struct v4l2_subdev *subdev,
-			    struct v4l2_async_subdev *asd)
+				 struct v4l2_subdev *subdev,
+				 struct v4l2_async_subdev *asd)
 {
 	struct mx6s_csi_dev *csi_dev = notifier_to_mx6s_dev(notifier);
 
-	if (subdev == NULL)
-		return -EINVAL;
+	BUG_ON(subdev == NULL || csi_dev->sd != NULL);
+
 
 	/* Find platform data for this sensor subdev */
 	if (csi_dev->asd.match.fwnode == dev_fwnode(subdev->dev))
@@ -1834,6 +1834,21 @@ static int subdev_notifier_bound(struct v4l2_async_notifier *notifier,
 		  subdev->name);
 
 	return 0;
+}
+
+static void subdev_notifier_unbind(struct v4l2_async_notifier *notifier,
+				   struct v4l2_subdev *subdev,
+				   struct v4l2_async_subdev *asd)
+{
+	struct mx6s_csi_dev *csi_dev = notifier_to_mx6s_dev(notifier);
+
+	BUG_ON(subdev == NULL);
+
+	if (subdev == csi_dev->sd)
+		csi_dev->sd = NULL;
+
+	v4l2_info(&csi_dev->v4l2_dev, "Unregistered sensor subdevice: %s\n",
+		  subdev->name);
 }
 
 static int mx6s_csi_mode_sel(struct mx6s_csi_dev *csi_dev)
@@ -1882,6 +1897,7 @@ static int mx6s_csi_mode_sel(struct mx6s_csi_dev *csi_dev)
 
 static const struct v4l2_async_notifier_operations mx6s_capture_async_ops = {
 	.bound = subdev_notifier_bound,
+	.unbind = subdev_notifier_unbind,
 };
 
 static int mx6s_csi_two_8bit_sensor_mode_sel(struct mx6s_csi_dev *csi_dev)
