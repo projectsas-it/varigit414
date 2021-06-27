@@ -1,0 +1,54 @@
+/*
+ * Copyright 2018 NXP
+ * Copyright 2019-2020 Variscite Ltd.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+&ov5640_mipi1 {
+	status = "disabled";
+};
+
+&i2c2 {
+	ar1335_af_mipi1: ar1335_af_mipi1@42 {
+		status = "okay";
+		compatible = "ar1335_af";
+		reg = <0x42>;
+		clocks = <&clk IMX8MM_CLK_CLKO1>;
+		clock-names = "csi_mclk";
+		camera_mipi_lanes = <4>;
+		csi_id = <0>;
+		mclk = <24000000>;
+		mclk_source = <0>;
+		port {
+			ar1335_af_mipi1_ep: endpoint {
+				remote-endpoint = <&mipi1_sensor_ep>;
+			};
+		};
+	};
+};
+
+&mipi1_sensor_ep {
+	remote-endpoint = <&ar1335_af_mipi1_ep>;
+	data-lanes = <4>;
+	pixel-mode = <1>;
+	csis-hs-settle = <23>;
+};
+
+&mipi_csi_1 {
+	clock-frequency = <550000000>;
+};
+
+&csi1_bridge {
+	fsl,two-8bit-sensor-mode;
+	yuv-double-component;
+	yu-swap;
+};

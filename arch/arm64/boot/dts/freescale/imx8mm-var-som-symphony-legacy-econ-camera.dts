@@ -1,0 +1,7 @@
+#include "imx8mm-var-som-symphony-legacy.dts"
+#include "imx8mm-var-som-econ-camera.dtsi"
+
+&ar1335_af_mipi1 {
+	pwn-gpios = <&gpio5 12 GPIO_ACTIVE_HIGH>;
+	rst-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+};

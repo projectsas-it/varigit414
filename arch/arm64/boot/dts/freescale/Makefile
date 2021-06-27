@@ -60,6 +60,8 @@ dtb-$(CONFIG_ARCH_MXC) += imx8mm-var-dart-dt8mcustomboard.dtb imx8mm-var-dart-dt
 			  imx8mm-var-dart-dt8mcustomboard-m4.dtb imx8mm-var-dart-dt8mcustomboard-legacy-m4.dtb \
 			  imx8mm-var-som-symphony.dtb imx8mm-var-som-symphony-legacy.dtb \
 			  imx8mm-var-som-symphony-m4.dtb imx8mm-var-som-symphony-legacy-m4.dtb \
+			  imx8mm-var-dart-dt8mcustomboard-econ-camera.dtb imx8mm-var-dart-dt8mcustomboard-legacy-econ-camera.dtb \
+			  imx8mm-var-som-symphony-econ-camera.dtb imx8mm-var-som-symphony-legacy-econ-camera.dtb \
 			  imx8mm-var-dart-dt8mcustomboard-basler.dtb imx8mm-var-dart-dt8mcustomboard-legacy-basler.dtb \
 			  imx8mm-var-som-symphony-basler.dtb imx8mm-var-som-symphony-legacy-basler.dtb
 dtb-$(CONFIG_ARCH_MXC) += imx8mn-evk.dtb imx8mn-evk-rm67191.dtb imx8mn-ddr4-evk.dtb imx8mn-ddr4-evk-ak5558.dtb \

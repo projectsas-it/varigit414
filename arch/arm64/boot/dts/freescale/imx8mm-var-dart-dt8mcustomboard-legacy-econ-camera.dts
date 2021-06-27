@@ -1,0 +1,7 @@
+#include "imx8mm-var-dart-dt8mcustomboard-legacy.dts"
+#include "imx8mm-var-som-econ-camera.dtsi"
+
+&ar1335_af_mipi1 {
+	pwn-gpios = <&gpio4 8 GPIO_ACTIVE_HIGH>;
+	rst-gpios = <&gpio5 28 GPIO_ACTIVE_HIGH>;
+};
