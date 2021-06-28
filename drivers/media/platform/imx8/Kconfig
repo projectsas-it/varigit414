@@ -19,6 +19,13 @@ config MXC_CAMERA_AR1335_AF
         default y
         help
           Enable support for video4linux camera sensor driver for eCAM136_IMX8
+
+config MXC_CAMERA_BASLER
+        tristate "BASLER Camera driver support"
+        depends on I2C
+        default y
+        help
+          Enable support for video4linux camera sensor driver for BASLER
 endmenu
 endif #VIDEO_MX8_CAPTURE
 
