@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright 2017 NXP
+ * Copyright 2018-2021 Variscite Ltd.
+ */
+
+#include "imx8mq-var-dart-dt8mcustomboard-econ-camera.dtsi"
+
+
+&i2c2 {
+	ar1335_af_mipi1: ar1335_af_mipi1@42 {
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_csi1>;
+		pwn-gpios = <&gpio4 8 GPIO_ACTIVE_HIGH>;
+		rst-gpios = <&gpio5 28 GPIO_ACTIVE_HIGH>;
+	};
+};

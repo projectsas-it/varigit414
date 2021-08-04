@@ -143,6 +143,7 @@ dtb-$(CONFIG_ARCH_MXC) += imx8mq-var-dart-dt8mcustomboard-legacy-m4-sd-dp.dtb \
 			  imx8mq-var-dart-dt8mcustomboard-legacy-sd-dp-basler.dtb \
 			  imx8mq-var-dart-dt8mcustomboard-legacy-sd-hdmi-basler.dtb \
 			  imx8mq-var-dart-dt8mcustomboard-legacy-sd-lvds-basler.dtb \
+			  imx8mq-var-dart-dt8mcustomboard-legacy-sd-lvds-econ-camera.dtb \
 			  imx8mq-var-dart-dt8mcustomboard-legacy-sd-lvds-dp-basler.dtb \
 			  imx8mq-var-dart-dt8mcustomboard-legacy-sd-lvds-hdmi-basler.dtb \
 			  imx8mq-var-dart-dt8mcustomboard-legacy-wifi-dp-basler.dtb \
