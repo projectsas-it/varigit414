@@ -44,6 +44,8 @@ MODULE_PARM_DESC(debug, "Debug level (0-2)");
 #define	GPR_CSI2_1_S_PRG_RXHS_SETTLE(x)	(((x) & 0x3F) << 2)
 #define	GPR_CSI2_1_RX_RCAL		(3)
 
+static u32 rxhs_settle[2] = { 0x14, 0x9 };
+
 static struct mxc_mipi_csi2_dev *sd_to_mxc_mipi_csi2_dev(struct v4l2_subdev
 							 *sdev)
 {
@@ -382,6 +384,12 @@ static int mipi_csi2_set_fmt(struct v4l2_subdev *sd,
 	if (fmt->pad)
 		return -EINVAL;
 
+	if (fmt->format.width * fmt->format.height > 720 * 480) {
+		csi2dev->hs_settle = rxhs_settle[1];
+	} else {
+		csi2dev->hs_settle = rxhs_settle[0];
+	}
+
 	return v4l2_subdev_call(sensor_sd, pad, set_fmt, NULL, fmt);
 }
 
@@ -442,10 +450,11 @@ static int mipi_csi2_parse_dt(struct mxc_mipi_csi2_dev *csi2dev)
 
 	csi2dev->vchannel = of_property_read_bool(node, "virtual-channel");
 
-	ret = of_property_read_u32(node, "rxhs-settle", &csi2dev->hs_settle);
-	if(ret < 0)
-		csi2dev->hs_settle = 0x09;
-
+	ret = of_property_read_u32_array(node, "rxhs-settle", rxhs_settle, 2);
+	if(ret == -EOVERFLOW) {
+		if (!of_property_read_u32(node, "rxhs-settle", rxhs_settle))
+			rxhs_settle[1] = rxhs_settle[0];
+	}
 	ret = of_property_read_u32(node, "send-level", &csi2dev->send_level);
 	if(ret < 0)
 		csi2dev->send_level = 64;
@@ -650,8 +659,8 @@ static int mipi_csi2_probe(struct platform_device *pdev)
 	if (ret < 0)
 		goto e_clkdis;
 
-	dev_info(dev, "rxhs-settle: %d, name: %s\n",
-		 csi2dev->hs_settle, csi2dev->sd.name);
+	dev_info(dev, "rxhs-settle: %d %d, name: %s\n",
+		 rxhs_settle[0], rxhs_settle[1], csi2dev->sd.name);
 
 	dev_info(dev, "send-level: %d, name: %s\n",
 		 csi2dev->send_level, csi2dev->sd.name);
