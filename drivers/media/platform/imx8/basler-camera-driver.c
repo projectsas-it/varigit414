@@ -1041,9 +1041,10 @@ static int basler_camera_probe(struct i2c_client *client,
 	ret = basler_retrieve_device_information(client,
 						 &sensor->device_information);
 	if (ret) {
-		dev_dbg(dev,
+		dev_err(dev,
 			"basler_retrieve_device_information() failed: %d\n",
 			ret);
+		ret = -EPROBE_DEFER;
 		goto exit;
 	}
 
@@ -1053,7 +1054,7 @@ static int basler_camera_probe(struct i2c_client *client,
 	sensor->sd.entity.ops = &basler_camera_sd_media_ops;
 	ret = media_entity_pads_init(&sensor->sd.entity, 1, &sensor->pad);
 	if (ret) {
-		dev_dbg(dev, "media_entity_pads_init() failed: %d\n", ret);
+		dev_err(dev, "media_entity_pads_init() failed: %d\n", ret);
 		goto exit;
 	}
 
@@ -1061,7 +1062,7 @@ static int basler_camera_probe(struct i2c_client *client,
 
 	ret = basler_camera_init_controls(sensor);
 	if (ret) {
-		dev_dbg(dev,
+		dev_err(dev,
 			"basler_camera_init_controls() failed: %d\n",
 			ret);
 		goto entity_cleanup;
@@ -1069,7 +1070,7 @@ static int basler_camera_probe(struct i2c_client *client,
 
 	ret = v4l2_async_register_subdev(&sensor->sd);
 	if (ret) {
-		dev_dbg(dev,
+		dev_err(dev,
 			"v4l2_async_register_subdev() failed: %d\n",
 			ret);
 		goto handler_cleanup;
