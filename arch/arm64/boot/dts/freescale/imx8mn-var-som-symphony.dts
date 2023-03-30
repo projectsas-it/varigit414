@@ -104,6 +104,39 @@
 		>;
 	};
 
+	pinctrl_ecspi1_extra: ecspi1_extra_grp {
+		fsl,pins = <
+			MX8MN_IOMUXC_ECSPI1_SS0_GPIO5_IO9		0x13
+		>;
+	};
+
+	pinctrl_ecspi2: ecspi2grp {
+		fsl,pins = <
+			MX8MN_IOMUXC_ECSPI2_SCLK_ECSPI2_SCLK		0x13
+			MX8MN_IOMUXC_ECSPI2_MOSI_ECSPI2_MOSI		0x13
+			MX8MN_IOMUXC_ECSPI2_MISO_ECSPI2_MISO		0x13
+			MX8MN_IOMUXC_ECSPI2_SS0_GPIO5_IO13		0x13
+		>;
+	};
+
+	pinctrl_sc16_uart1: sc16_uart1_grp {
+		fsl,pins = <
+			MX8MN_IOMUXC_SPDIF_TX_GPIO5_IO3			0x13
+		>;
+	};
+
+	pinctrl_sc16_uart2: sc16_uart2_grp {
+		fsl,pins = <
+			MX8MN_IOMUXC_SAI2_MCLK_GPIO4_IO27		0x13
+		>;
+	};
+
+	pinctrl_sc16_uart3: sc16_uart3_grp {
+		fsl,pins = <
+			MX8MN_IOMUXC_SPDIF_RX_GPIO5_IO4			0x13
+		>;
+	};
+
 	pinctrl_i2c2: i2c2grp {
 		fsl,pins = <
 			MX8MN_IOMUXC_I2C2_SCL_I2C2_SCL			0x400001c3
@@ -148,6 +181,13 @@
 		fsl,pins = <
 			MX8MN_IOMUXC_UART1_RXD_UART1_DCE_RX		0x140
 			MX8MN_IOMUXC_UART1_TXD_UART1_DCE_TX		0x140
+		>;
+	};
+
+	pinctrl_uart2_alt: uart2grp {
+		fsl,pins = <
+			MX8MN_IOMUXC_UART2_RXD_UART2_DCE_RX		0x140
+			MX8MN_IOMUXC_UART2_TXD_UART2_DCE_TX		0x140
 		>;
 	};
 
@@ -218,6 +258,64 @@
 			MX8MN_IOMUXC_GPIO1_IO11_GPIO1_IO11		0x16
 		>;
 	};
+
+	pinctrl_reset: resetgrp {
+		fsl,pins = <
+			MX8MN_IOMUXC_GPIO1_IO02_GPIO1_IO2		0x19
+			MX8MN_IOMUXC_GPIO1_IO12_GPIO1_IO12		0x19
+		>;
+	};
+};
+
+&ecspi1 {
+	pinctrl-0 = <
+			&pinctrl_ecspi1
+			&pinctrl_ecspi1_extra>;
+	cs-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>,
+		   <&gpio1  0 GPIO_ACTIVE_LOW>,
+		   <&gpio2 19 GPIO_ACTIVE_LOW>,
+		   <&gpio5  9 GPIO_ACTIVE_LOW>;
+
+	ads7846@0 {
+		status = "disabled";
+	};
+
+	can0: can@1 {
+		status = "disabled";
+	};
+
+	sc16is750_1: sc16is750@3 {
+		compatible = "nxp,sc16is752";
+		reg = <3>;
+		spi-max-frequency = <12000000>;
+		pinctrl-0 = <&pinctrl_sc16_uart1>;
+		interrupt-parent = <&gpio5>;
+		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
+		clock-frequency = <14745600>;
+		linux,rs485-enabled-at-boot-time;
+		rs485-rts-active-low;
+		status = "okay";
+	};
+};
+
+&ecspi2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_ecspi2>;
+	cs-gpios = <&gpio5 13 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	sc16is750_2: sc16is750@0 {
+		compatible = "nxp,sc16is752";
+		reg = <0>;
+		spi-max-frequency = <12000000>;
+		pinctrl-0 = <&pinctrl_sc16_uart2>;
+		interrupt-parent = <&gpio4>;
+		interrupts = <27 IRQ_TYPE_EDGE_FALLING>;
+		clock-frequency = <14745600>;
+		linux,rs485-enabled-at-boot-time;
+		rs485-rts-active-low;
+		status = "okay";
+	};
 };
 
 &i2c2 {
@@ -229,26 +327,8 @@
 	sda-gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 
-	/* USB Type-C Controller */
-	extcon_ptn5150: typec@3d {
-		compatible = "nxp,ptn5150";
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_extcon>;
-		reg = <0x3d>;
-		interrupt-parent = <&gpio1>;
-		interrupts = <11 IRQ_TYPE_NONE>;
-		irq-is-id-quirk;
-		status ="okay";
-
-		port {
-			typec1_dr_sw: endpoint {
-				remote-endpoint = <&usb1_drd_sw>;
-			};
-		};
-	};
-
 	ov5640_mipi1: ov5640_mipi1@3c {
-		status = "okay";
+		status = "disabled";
 		compatible = "ovti,ov5640";
 		reg = <0x3c>;
 		pinctrl-names = "default";
@@ -370,6 +450,18 @@
 	scl-gpios = <&gpio5 20 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpio5 21 GPIO_ACTIVE_HIGH>;
 	status = "okay";
+
+	sc16is750_3: sc16is750@48 {
+		compatible = "nxp,sc16is752";
+		reg = <0x48>;
+		pinctrl-0 = <&pinctrl_sc16_uart3>;
+		interrupt-parent = <&gpio5>;
+		interrupts = <4 IRQ_TYPE_EDGE_FALLING>;
+		clock-frequency = <14745600>;
+		linux,rs485-enabled-at-boot-time;
+		rs485-rts-active-low;
+		status = "okay";
+	};
 };
 
 &mipi_csi_1 {
@@ -434,6 +526,13 @@
 };
 
 /* Header */
+&uart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart2_alt>;
+	status = "okay";
+};
+
+/* Header */
 &uart3 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart3>;
@@ -450,21 +549,16 @@
 };
 
 &usbotg1 {
-	dr_mode = "otg";
-	hnp-disable;
-	srp-disable;
-	adp-disable;
-	usb-role-switch;
+	dr_mode = "host";
 	disable-over-current;
 	samsung,picophy-pre-emp-curr-control = <3>;
 	samsung,picophy-dc-vol-level-adjust = <7>;
 	status = "okay";
+};
 
-	port {
-		usb1_drd_sw: endpoint {
-			remote-endpoint = <&typec1_dr_sw>;
-		};
-	};
+/* WIFI */
+&usdhc1 {
+	status = "disabled";
 };
 
 /* SD */
@@ -480,3 +574,26 @@
 	vmmc-supply = <&reg_usdhc2_vmmc>;
 	status = "okay";
 };
+/* 
+&gpio1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_reset>;
+
+	usb_lan_rst_hog {
+		gpio-hog;
+		gpios = <2 GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "usb_lan_rst";
+	};
+
+	sc16_uarts_rst_hog {
+		gpio-hog;
+		gpios = <12 GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "sc16_uarts_rst";
+	};
+};
+
+&wdog1 {
+	status = "disabled";
+}; */
