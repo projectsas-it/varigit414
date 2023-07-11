@@ -79,6 +79,9 @@
 #define OV5640_REG_HZ5060_CTRL00	0x3c00
 #define OV5640_REG_HZ5060_CTRL01	0x3c01
 #define OV5640_REG_SIGMADELTA_CTRL0C	0x3c0c
+#define OV5640_REG_OTP_DATA		0x3d00
+#define OV5640_REG_OTP_PROG		0x3d20
+#define OV5640_REG_OTP_READ		0x3d21
 #define OV5640_REG_FRAME_CTRL01		0x4202
 #define OV5640_REG_FORMAT_CONTROL00	0x4300
 #define OV5640_REG_VFIFO_HSIZE		0x4602
@@ -3249,6 +3252,7 @@ static int ov5640_check_chip_id(struct ov5640_dev *sensor)
 	struct i2c_client *client = sensor->i2c_client;
 	int ret = 0;
 	u16 chip_id;
+	u8 otp_val = 0;
 
 	ret = ov5640_set_power_on(sensor);
 	if (ret)
@@ -3265,7 +3269,26 @@ static int ov5640_check_chip_id(struct ov5640_dev *sensor)
 		dev_err(&client->dev, "%s: wrong chip identifier, expected 0x5640, got 0x%x\n",
 			__func__, chip_id);
 		ret = -ENXIO;
+		goto power_off;
 	}
+
+	ret = ov5640_write_reg(sensor, OV5640_REG_OTP_READ, 0x01);
+	if (ret)
+		goto power_off;
+	msleep(1);
+
+	ret = ov5640_read_reg(sensor, OV5640_REG_OTP_DATA + 0x1f, &otp_val);
+	if (ret)
+		goto power_off;
+	dev_warn(&client->dev, "%s: OTP register 1F value is 0x%x\n",
+		__func__, otp_val);
+	if (otp_val == 1)
+		sensor->legacy_revision = 1;
+
+	msleep(10);
+	ret = ov5640_write_reg(sensor, OV5640_REG_OTP_READ, 0x00);
+	if (ret)
+		goto power_off;
 
 power_off:
 	ov5640_set_power_off(sensor);
