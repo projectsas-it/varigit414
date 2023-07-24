@@ -1282,6 +1282,9 @@ static int sc16is7xx_probe(struct device *dev,
 		s->p[i].port.rs485_config = sc16is7xx_config_rs485;
 		s->p[i].port.ops	= &sc16is7xx_ops;
 		s->p[i].port.line	= sc16is7xx_alloc_line();
+		ret = uart_get_rs485_mode(&s->p[i].port);
+		if (ret)
+			goto out_ports;
 		if (s->p[i].port.line >= SC16IS7XX_MAX_DEVS) {
 			ret = -ENOMEM;
 			goto out_ports;
@@ -1316,6 +1319,9 @@ static int sc16is7xx_probe(struct device *dev,
 
 		/* Go to suspend mode */
 		sc16is7xx_power(&s->p[i].port, 0);
+
+		/* Schedule check if RS485 enabled at boot time */
+		s->p[i].config.flags |= SC16IS7XX_RECONF_RS485;
 	}
 
 	if (dev->of_node) {
