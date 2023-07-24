@@ -297,7 +297,6 @@
 					SC16IS7XX_EFR_SWFLOW1_BIT | \
 					SC16IS7XX_EFR_SWFLOW0_BIT)
 
-
 /* Misc definitions */
 #define SC16IS7XX_FIFO_SIZE		(64)
 #define SC16IS7XX_REG_SHIFT		2
@@ -354,7 +353,6 @@ static struct uart_driver sc16is7xx_uart = {
 
 static void sc16is7xx_ier_set(struct uart_port *port, u8 bit);
 static void sc16is7xx_stop_tx(struct uart_port *port);
-
 #define to_sc16is7xx_port(p,e)	((container_of((p), struct sc16is7xx_port, e)))
 #define to_sc16is7xx_one(p,e)	((container_of((p), struct sc16is7xx_one, e)))
 
@@ -546,7 +544,6 @@ static int sc16is7xx_set_baud(struct uart_port *port, int baud)
 	sc16is7xx_port_update(port, SC16IS7XX_EFR_REG,
 			      SC16IS7XX_EFR_ENABLE_BIT,
 			      SC16IS7XX_EFR_ENABLE_BIT);
-
 	regcache_cache_bypass(s->regmap, false);
 
 	/* Put LCR back to the normal mode */
@@ -701,7 +698,6 @@ static void sc16is7xx_handle_tx(struct uart_port *port)
 	spin_lock_irqsave(&port->lock, flags);
 	if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
 		uart_write_wakeup(port);
-
 	if (uart_circ_empty(xmit))
 		sc16is7xx_stop_tx(port);
 	spin_unlock_irqrestore(&port->lock, flags);
@@ -825,7 +821,6 @@ static void sc16is7xx_tx_proc(struct kthread_work *ws)
 	mutex_lock(&s->efr_lock);
 	sc16is7xx_handle_tx(port);
 	mutex_unlock(&s->efr_lock);
-
 	spin_lock_irqsave(&port->lock, flags);
 	sc16is7xx_ier_set(port, SC16IS7XX_IER_THRI_BIT);
 	spin_unlock_irqrestore(&port->lock, flags);
@@ -880,7 +875,6 @@ static void sc16is7xx_reg_proc(struct kthread_work *ws)
 				      SC16IS7XX_MCR_LOOP_BIT,
 				      mcr);
 	}
-
 	if (config.flags & SC16IS7XX_RECONF_IER)
 		sc16is7xx_port_update(&one->port, SC16IS7XX_IER_REG,
 				      config.ier_mask, config.ier_val);
@@ -895,7 +889,6 @@ static void sc16is7xx_ier_clear(struct uart_port *port, u8 bit)
 	struct sc16is7xx_one *one = to_sc16is7xx_one(port, port);
 
 	lockdep_assert_held_once(&port->lock);
-
 	one->config.flags |= SC16IS7XX_RECONF_IER;
 	one->config.ier_mask |= bit;
 	one->config.ier_val &= ~bit;
@@ -948,7 +941,6 @@ static void sc16is7xx_enable_ms(struct uart_port *port)
 
 	kthread_queue_delayed_work(&s->kworker, &one->ms_work, 0);
 }
-
 static void sc16is7xx_start_tx(struct uart_port *port)
 {
 	struct sc16is7xx_port *s = dev_get_drvdata(port->dev);
@@ -979,7 +971,6 @@ static void sc16is7xx_unthrottle(struct uart_port *port)
 	sc16is7xx_ier_set(port, SC16IS7XX_IER_RDI_BIT);
 	spin_unlock_irqrestore(&port->lock, flags);
 }
-
 static unsigned int sc16is7xx_tx_empty(struct uart_port *port)
 {
 	unsigned int lsr;
@@ -1085,7 +1076,6 @@ static void sc16is7xx_set_termios(struct uart_port *port,
 	regcache_cache_bypass(s->regmap, true);
 	sc16is7xx_port_write(port, SC16IS7XX_XON1_REG, termios->c_cc[VSTART]);
 	sc16is7xx_port_write(port, SC16IS7XX_XOFF1_REG, termios->c_cc[VSTOP]);
-
 	port->status &= ~(UPSTAT_AUTOCTS | UPSTAT_AUTORTS);
 	if (termios->c_cflag & CRTSCTS) {
 		flow |= SC16IS7XX_EFR_AUTOCTS_BIT |
@@ -1117,10 +1107,8 @@ static void sc16is7xx_set_termios(struct uart_port *port,
 	baud = sc16is7xx_set_baud(port, baud);
 
 	spin_lock_irqsave(&port->lock, flags);
-
 	/* Update timeout according to new baud rate */
 	uart_update_timeout(port, termios->c_cflag, baud);
-
 	if (UART_ENABLE_MS(port, termios->c_cflag))
 		sc16is7xx_enable_ms(port);
 
@@ -1134,6 +1122,7 @@ static int sc16is7xx_config_rs485(struct uart_port *port, struct ktermios *termi
 	struct sc16is7xx_one *one = to_sc16is7xx_one(port, port);
 
 	if (rs485->flags & SER_RS485_ENABLED) {
+
 		/*
 		 * RTS signal is handled by HW, it's timing can't be influenced.
 		 * However, it's sometimes useful to delay TX even without RTS
@@ -1214,7 +1203,6 @@ static int sc16is7xx_startup(struct uart_port *port)
 	spin_lock_irqsave(&port->lock, flags);
 	sc16is7xx_enable_ms(port);
 	spin_unlock_irqrestore(&port->lock, flags);
-
 	return 0;
 }
 
@@ -1358,7 +1346,6 @@ static const struct serial_rs485 sc16is7xx_rs485_supported = {
 	.delay_rts_before_send = 1,
 	.delay_rts_after_send = 1,	/* Not supported but keep returning -EINVAL */
 };
-
 static int sc16is7xx_probe(struct device *dev,
 			   const struct sc16is7xx_devtype *devtype,
 			   struct regmap *regmap, int irq)
@@ -1426,6 +1413,7 @@ static int sc16is7xx_probe(struct device *dev,
 	}
 	sched_set_fifo(s->kworker_task);
 
+
 	/* reset device, purging any pending irq / data */
 	regmap_write(s->regmap, SC16IS7XX_IOCONTROL_REG << SC16IS7XX_REG_SHIFT,
 			SC16IS7XX_IOCONTROL_SRESET_BIT);
@@ -1446,7 +1434,9 @@ static int sc16is7xx_probe(struct device *dev,
 		s->p[i].port.ops	= &sc16is7xx_ops;
 		s->p[i].old_mctrl	= 0;
 		s->p[i].port.line	= sc16is7xx_alloc_line();
-
+		ret = uart_get_rs485_mode(&s->p[i].port);
+		if (ret)
+			goto out_ports;
 		if (s->p[i].port.line >= SC16IS7XX_MAX_DEVS) {
 			ret = -ENOMEM;
 			goto out_ports;
@@ -1458,13 +1448,11 @@ static int sc16is7xx_probe(struct device *dev,
 		sc16is7xx_port_write(&s->p[i].port, SC16IS7XX_EFCR_REG,
 				     SC16IS7XX_EFCR_RXDISABLE_BIT |
 				     SC16IS7XX_EFCR_TXDISABLE_BIT);
-
 		/* Use GPIO lines as modem status registers */
 		if (devtype->has_mctrl)
 			sc16is7xx_port_write(&s->p[i].port,
 					     SC16IS7XX_IOCONTROL_REG,
 					     SC16IS7XX_IOCONTROL_MODEM_BIT);
-
 		/* Initialize kthread work structs */
 		kthread_init_work(&s->p[i].tx_work, sc16is7xx_tx_proc);
 		kthread_init_work(&s->p[i].reg_work, sc16is7xx_reg_proc);
@@ -1489,6 +1477,8 @@ static int sc16is7xx_probe(struct device *dev,
 
 		/* Go to suspend mode */
 		sc16is7xx_power(&s->p[i].port, 0);
+		/* Schedule check if RS485 enabled at boot time */
+		s->p[i].config.flags |= SC16IS7XX_RECONF_RS485;
 	}
 
 	if (dev->of_node) {
@@ -1520,7 +1510,6 @@ static int sc16is7xx_probe(struct device *dev,
 			goto out_thread;
 	}
 #endif
-
 	/*
 	 * Setup interrupt. We first try to acquire the IRQ line as level IRQ.
 	 * If that succeeds, we can allow sharing the interrupt as well.
@@ -1546,7 +1535,6 @@ static int sc16is7xx_probe(struct device *dev,
 
 out_thread:
 #endif
-
 out_ports:
 	for (i--; i >= 0; i--) {
 		uart_remove_one_port(&sc16is7xx_uart, &s->p[i].port);
@@ -1582,6 +1570,7 @@ static void sc16is7xx_remove(struct device *dev)
 	kthread_stop(s->kworker_task);
 
 	clk_disable_unprepare(s->clk);
+
 }
 
 static const struct of_device_id __maybe_unused sc16is7xx_dt_ids[] = {
