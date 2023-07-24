@@ -114,27 +114,27 @@
 	};
 
 	panel {
-		compatible = "sgd,gktw70sdae4se", "panel-lvds";
+		compatible = "panel-lvds";
 		backlight = <&backlight>;
-		width-mm = <153>;
-		height-mm = <87>;
-		label = "gktw70sdae4se";
-		data-mapping = "jeida-24";
+		width-mm = <235>;
+		height-mm = <143>;
+		data-mapping = "vesa-24";
 		status = "okay";
 
 		panel-timing {
-			clock-frequency = <33000000>;
-			hactive = <800>;
-			vactive = <480>;
-			hback-porch = <40>;
-			hfront-porch = <40>;
-			vback-porch = <29>;
-			vfront-porch = <13>;
-			hsync-len = <48>;
+			clock-frequency = <51200000>;
+			hactive = <1024>;
+			vactive = <600>;
+			hback-porch = <160>;
+			hfront-porch = <140>;
+			vback-porch = <23>;
+			vfront-porch = <9>;
+			hsync-len = <20>;
 			vsync-len = <3>;
 			hsync-active = <0>;
 			vsync-active = <0>;
 			de-active = <1>;
+			pixelclk-active = <0>;
 		};
 
 		port {
@@ -170,35 +170,6 @@
 	status = "okay";
 };
 
-&eqos {
-	mdio {
-		ethphy1: ethernet-phy@5 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			reg = <5>;
-			at803x,eee-disabled;
-			eee-broken-1000t;
-			reset-gpios = <&pca9534 5 GPIO_ACTIVE_LOW>;
-			reset-assert-us = <10000>;
-			reset-deassert-us = <20000>;
-			vddio-supply = <&vddio1>;
-
-			vddio1: vddio-regulator {
-				regulator-min-microvolt = <1800000>;
-				regulator-max-microvolt = <1800000>;
-			};
-		};
-	};
-};
-
-&fec {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_fec>;
-	phy-mode = "rgmii";
-	phy-handle = <&ethphy1>;
-	phy-supply = <&reg_fec_phy>;
-	status = "okay";
-};
-
 &flexspi {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_flexspi0>;
@@ -214,23 +185,6 @@
 	sda-gpios = <&gpio5 19 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 
-	/* USB Type-C Controller */
-	typec@3d {
-		compatible = "nxp,ptn5150";
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_extcon>;
-		reg = <0x3d>;
-		interrupt-parent = <&gpio1>;
-		interrupts = <5 IRQ_TYPE_LEVEL_HIGH>;
-		irq-is-id-quirk;
-		status ="okay";
-
-		port {
-			typec_dr_sw: endpoint {
-				remote-endpoint = <&usb3_drd_sw>;
-			};
-		};
-	};
 
 	/* GPIO expander */
 	pca9534: gpio@20 {
@@ -284,6 +238,17 @@
 			};
 		};
 	};
+	sc16is750_3: sc16is750@48 {
+		compatible = "nxp,sc16is752";
+		reg = <0x48>;
+		pinctrl-0 = <&pinctrl_sc16_uart3>;
+		interrupt-parent = <&gpio5>;
+		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
+		clock-frequency = <14745600>;
+		linux,rs485-enabled-at-boot-time;
+		rs485-rts-active-low;
+		status = "okay";
+	};
 };
 
 &i2c4 {
@@ -303,19 +268,35 @@
 	};
 
 	/* Capacitive touch controller */
-	ft5x06_ts: ft5x06_ts@38 {
-		compatible = "edt,edt-ft5206";
-		reg = <0x38>;
+	ar1021@4d {
+		compatible = "microchip,ar1021-i2c";
+		reg = <0x4d>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_captouch>;
-		interrupt-parent = <&gpio5>;
-		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
-		touchscreen-size-x = <800>;
-		touchscreen-size-y = <480>;
+		interrupt-parent = <&gpio4>;
+		interrupts = <23 IRQ_TYPE_LEVEL_HIGH>;
+		touchscreen-size-x = <1024>;
+		touchscreen-size-y = <600>;
 		touchscreen-inverted-x;
 		touchscreen-inverted-y;
 		wakeup-source;
-		status = "okay";
+	};
+
+	/* Capacitive touch controller */
+	egalax_i2c@2a {
+		compatible = "hid-over-i2c";
+		reg = <0x2a>;
+		status = "disabled";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_captouch>;
+		hid-descr-addr = <0x000f>;
+		interrupt-parent = <&gpio4>;
+		interrupts = <23 IRQ_TYPE_LEVEL_LOW>;
+		touchscreen-size-x = <1024>;
+		touchscreen-size-y = <600>;
+		touchscreen-inverted-x;
+		touchscreen-inverted-y;
+		wakeup-source;
 	};
 };
 
@@ -370,7 +351,7 @@
 	status = "okay";
 
 	lvds-channel@0 {
-		fsl,data-mapping = "jeida";
+		fsl,data-mapping = "spwg";
 		fsl,data-width = <24>;
 		status = "okay";
 
@@ -469,21 +450,12 @@
 };
 
 &usb_dwc3_0 {
-	dr_mode = "otg";
-	hnp-disable;
-	srp-disable;
-	adp-disable;
-	usb-role-switch;
-	role-switch-default-mode = "none";
+	dr_mode = "host";
+	disable-over-current;
 	snps,dis-u1-entry-quirk;
 	snps,dis-u2-entry-quirk;
 	status = "okay";
 
-	port {
-		usb3_drd_sw: endpoint {
-			remote-endpoint = <&typec_dr_sw>;
-		};
-	};
 };
 
 &usb3_phy1 {
@@ -513,6 +485,10 @@
 	status = "okay";
 };
 
+/* BT-WiFi */
+&brcmf {
+	status = "disabled";
+};
 &mipi_csi_0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -554,16 +530,28 @@
 	status = "disabled";
 };
 
+&ecspi1 {
+	/* Internal RES Touch */
+	ads7846@0 {
+		status = "disabled";
+	};
+};
 &ecspi2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi2>;
 	cs-gpios = <&gpio5 13 GPIO_ACTIVE_LOW>;
 	status = "okay";
 
-	spidev@0 {
-		compatible = "var,spidev";
+	sc16is750_1: sc16is750@0 {
+		compatible = "nxp,sc16is752";
 		reg = <0>;
 		spi-max-frequency = <12000000>;
+		pinctrl-0 = <&pinctrl_sc16_uart1>;
+		interrupt-parent = <&gpio1>;
+		interrupts = <11 IRQ_TYPE_EDGE_FALLING>;
+		clock-frequency = <14745600>;
+		linux,rs485-enabled-at-boot-time;
+		rs485-rts-active-low;
 		status = "okay";
 	};
 };
@@ -666,6 +654,19 @@
 		>;
 	};
 
+	pinctrl_uart3: uart3grp {
+		fsl,pins = <
+			MX8MP_IOMUXC_UART3_RXD__UART3_DCE_RX				0x140
+			MX8MP_IOMUXC_UART3_TXD__UART3_DCE_TX				0x140
+		>;
+	};
+
+	pinctrl_sc16_uart3: sc16_uart3_grp {
+		fsl,pins = <
+			MX8MP_IOMUXC_SPDIF_TX__GPIO5_IO03			0x13
+		>;
+	};
+
 	pinctrl_uart4: uart4grp {
 		fsl,pins = <
 			MX8MP_IOMUXC_UART4_RXD__UART4_DCE_RX				0x40
@@ -723,9 +724,14 @@
 		>;
 	};
 
+	pinctrl_sc16_uart1: sc16_uart1_grp {
+		fsl,pins = <
+			MX8MP_IOMUXC_GPIO1_IO11__GPIO1_IO11				0x13
+		>;
+	};
 	pinctrl_captouch: captouchgrp {
 		fsl,pins = <
-			MX8MP_IOMUXC_SPDIF_TX__GPIO5_IO03 				0x16
+			MX8MP_IOMUXC_SAI2_RXD0__GPIO4_IO23				0xc0
 		>;
 	};
 
