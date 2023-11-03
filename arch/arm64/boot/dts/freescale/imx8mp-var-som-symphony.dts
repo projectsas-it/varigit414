@@ -257,6 +257,10 @@
 	};
 };
 
+&snvs_rtc {
+	status = "disabled";
+};
+
 &i2c4 {
 	clock-frequency = <400000>;
 	pinctrl-names = "default", "gpio";
@@ -533,7 +537,7 @@
 &ecspi1 {
 	/* Internal RES Touch */
 	ads7846@0 {
-		status = "disabled";
+		status = "okay";
 	};
 };
 
