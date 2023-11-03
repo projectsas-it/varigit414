@@ -251,6 +251,10 @@
 	};
 };
 
+&snvs_rtc {
+	status = "disabled";
+};
+
 &i2c4 {
 	clock-frequency = <400000>;
 	pinctrl-names = "default", "gpio";
@@ -536,6 +540,7 @@
 		status = "disabled";
 	};
 };
+
 &ecspi2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi2>;
