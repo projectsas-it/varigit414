@@ -490,9 +490,10 @@
 };
 
 /* BT-WiFi */
-&brcmf {
+&usdhc1 {
 	status = "disabled";
 };
+
 &mipi_csi_0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
