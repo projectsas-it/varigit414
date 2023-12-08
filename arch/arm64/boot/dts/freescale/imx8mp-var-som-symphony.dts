@@ -13,6 +13,10 @@
 		stdout-path = &uart2;
 	};
 
+	aliases {
+		ethernet1 = &usb_eth;
+	};
+
 	gpio-keys {
 		compatible = "gpio-keys";
 		status = "okay";
@@ -460,6 +464,14 @@
 	snps,dis-u2-entry-quirk;
 	status = "okay";
 
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	usb_eth: ethernet@1 {
+		compatible = "usb424,9e00";
+		reg = <1>;
+		/* local-mac-address = [00 00 00 00 00 00]; */
+	};
 };
 
 &usb3_phy1 {
