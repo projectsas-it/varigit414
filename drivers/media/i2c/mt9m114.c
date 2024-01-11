@@ -64,6 +64,27 @@
 #define MT9M114_CAM_OUTPUT_WIDTH			0xc868
 #define MT9M114_CAM_OUTPUT_HEIGHT			0xc86a
 #define MT9M114_CAM_OUTPUT_FORMAT			0xc86c
+#define MT9M114_CAM_OUTPUT_FORMAT_SWAP_RED_BLUE			BIT(0)
+#define MT9M114_CAM_OUTPUT_FORMAT_SWAP_BYTES			BIT(1)
+#define MT9M114_CAM_OUTPUT_FORMAT_MONO_ENABLE			BIT(2)
+#define MT9M114_CAM_OUTPUT_FORMAT_BT656_ENABLE			BIT(3)
+#define MT9M114_CAM_OUTPUT_FORMAT_BT656_CROP_SCALE_DISABLE	BIT(4)
+#define MT9M114_CAM_OUTPUT_FORMAT_FVLV_DISABLE			BIT(5)
+#define MT9M114_CAM_OUTPUT_FORMAT_FORMAT_YUV			(0 << 8)
+#define MT9M114_CAM_OUTPUT_FORMAT_FORMAT_RGB			(1 << 8)
+#define MT9M114_CAM_OUTPUT_FORMAT_FORMAT_BAYER			(2 << 8)
+#define MT9M114_CAM_OUTPUT_FORMAT_FORMAT_NONE			(3 << 8)
+#define MT9M114_CAM_OUTPUT_FORMAT_FORMAT_MASK			(3 << 8)
+#define MT9M114_CAM_OUTPUT_FORMAT_BAYER_FORMAT_RAWR10		(0 << 10)
+#define MT9M114_CAM_OUTPUT_FORMAT_BAYER_FORMAT_PRELSC_8_2	(1 << 10)
+#define MT9M114_CAM_OUTPUT_FORMAT_BAYER_FORMAT_POSTLSC_8_2	(2 << 10)
+#define MT9M114_CAM_OUTPUT_FORMAT_BAYER_FORMAT_PROCESSED8	(3 << 10)
+#define MT9M114_CAM_OUTPUT_FORMAT_BAYER_FORMAT_MASK		(3 << 10)
+#define MT9M114_CAM_OUTPUT_FORMAT_RGB_FORMAT_565RGB		(0 << 12)
+#define MT9M114_CAM_OUTPUT_FORMAT_RGB_FORMAT_555RGB		(1 << 12)
+#define MT9M114_CAM_OUTPUT_FORMAT_RGB_FORMAT_444xRGB		(2 << 12)
+#define MT9M114_CAM_OUTPUT_FORMAT_RGB_FORMAT_444RGBx		(3 << 12)
+#define MT9M114_CAM_OUTPUT_FORMAT_RGB_FORMAT_MASK		(3 << 12)
 #define MT9M114_CAM_OUTPUT_FORMAT_YUV			0xc86e
 #define MT9M114_CAM_AET_AEMODE				0xc878
 #define MT9M114_CAM_AET_MAX_FRAME_RATE			0xc88c
@@ -84,7 +105,14 @@
 #define MT9M114_CAM_SYSCTL_PLL_DIVIDER_M_N		0xc980
 #define MT9M114_CAM_SYSCTL_PLL_DIVIDER_P		0xc982
 #define MT9M114_CAM_PORT_OUTPUT_CONTROL			0xc984
-
+/* borrowed from mainline driver */
+#define MT9M114_CAM_PORT_PORT_SELECT_PARALLEL			(0 << 0)
+#define MT9M114_CAM_PORT_PORT_SELECT_MIPI			(1 << 0)
+#define MT9M114_CAM_PORT_CLOCK_SLOWDOWN				BIT(3)
+#define MT9M114_CAM_PORT_TRUNCATE_RAW_BAYER			BIT(4)
+#define MT9M114_CAM_PORT_PIXCLK_GATE				BIT(5)
+#define MT9M114_CAM_PORT_CONT_MIPI_CLK				BIT(6)
+#define MT9M114_CAM_PORT_CHAN_NUM(vc)				((vc) << 8)
 /* System Manager registers */
 #define MT9M114_SYSMGR_NEXT_STATE			0xdc00
 #define MT9M114_SYSMGR_CURRENT_STATE			0xdc01
@@ -144,9 +172,15 @@ struct mt9m114_reg {
 	s32 width;
 };
 
-struct mt9m114_format {
-	u32 mbus_code;
-	enum v4l2_colorspace colorspace;
+enum mt9m114_format_flag {
+	MT9M114_FMT_FLAG_PARALLEL = BIT(0),
+	MT9M114_FMT_FLAG_CSI2 = BIT(1),
+};
+
+struct mt9m114_format_info {
+	u32 code;
+	u32 output_format;
+	u32 flags;
 };
 
 /* regulator supplies */
@@ -179,6 +213,7 @@ struct mt9m114 {
 	struct gpio_desc *pwdn_gpio;
 
 	struct regulator_bulk_data supplies[MT9M114_NUM_SUPPLIES];
+	struct v4l2_fwnode_endpoint bus_cfg;
 };
 
 static const struct mt9m114_resolution mt9m114_resolutions[] = {
@@ -395,20 +430,57 @@ static const struct mt9m114_reg mt9m114_regs_720p[] = {
 	{ MT9M114_CAM_STAT_AE_INITIAL_WINDOW_YEND,       0x008F, 2 },
 };
 
-static const struct mt9m114_format mt9m114_formats[] = {
+static const struct mt9m114_format_info mt9m114_format_infos[] = {
 	{
-		.mbus_code      = MEDIA_BUS_FMT_UYVY8_2X8,
-		.colorspace     = V4L2_COLORSPACE_JPEG,
+		/*
+		 * The first two entries are used as defaults, for parallel and
+		 * CSI-2 buses respectively. Keep them in that order.
+		 */
+		.code = MEDIA_BUS_FMT_UYVY8_2X8,
+		.flags = MT9M114_FMT_FLAG_PARALLEL,
+		.output_format = MT9M114_CAM_OUTPUT_FORMAT_FORMAT_YUV,
 	}, {
-		.mbus_code      = MEDIA_BUS_FMT_YUYV8_2X8,
-		.colorspace     = V4L2_COLORSPACE_JPEG,
+		.code = MEDIA_BUS_FMT_UYVY8_1X16,
+		.flags = MT9M114_FMT_FLAG_CSI2,
+		.output_format = MT9M114_CAM_OUTPUT_FORMAT_FORMAT_YUV,
 	}, {
-		.mbus_code      = MEDIA_BUS_FMT_RGB565_2X8_LE,
-		.colorspace     = V4L2_COLORSPACE_SRGB,
+		.code = MEDIA_BUS_FMT_YUYV8_2X8,
+		.flags = MT9M114_FMT_FLAG_PARALLEL,
+		.output_format = MT9M114_CAM_OUTPUT_FORMAT_FORMAT_YUV
+			       | MT9M114_CAM_OUTPUT_FORMAT_SWAP_BYTES,
 	}, {
-		.mbus_code      = MEDIA_BUS_FMT_RGB565_1X16,
-		.colorspace     = V4L2_COLORSPACE_SRGB,
-	},
+		.code = MEDIA_BUS_FMT_YUYV8_1X16,
+		.flags = MT9M114_FMT_FLAG_CSI2,
+		.output_format = MT9M114_CAM_OUTPUT_FORMAT_FORMAT_YUV
+			       | MT9M114_CAM_OUTPUT_FORMAT_SWAP_BYTES,
+	}, {
+		.code = MEDIA_BUS_FMT_RGB565_2X8_LE,
+		.flags = MT9M114_FMT_FLAG_PARALLEL,
+		.output_format = MT9M114_CAM_OUTPUT_FORMAT_RGB_FORMAT_565RGB
+			       | MT9M114_CAM_OUTPUT_FORMAT_FORMAT_RGB
+			       | MT9M114_CAM_OUTPUT_FORMAT_SWAP_BYTES,
+	}, {
+		.code = MEDIA_BUS_FMT_RGB565_2X8_BE,
+		.flags = MT9M114_FMT_FLAG_PARALLEL,
+		.output_format = MT9M114_CAM_OUTPUT_FORMAT_RGB_FORMAT_565RGB
+			       | MT9M114_CAM_OUTPUT_FORMAT_FORMAT_RGB,
+	}, {
+		.code = MEDIA_BUS_FMT_RGB565_1X16,
+		.flags = MT9M114_FMT_FLAG_CSI2,
+		.output_format = MT9M114_CAM_OUTPUT_FORMAT_RGB_FORMAT_565RGB
+			       | MT9M114_CAM_OUTPUT_FORMAT_FORMAT_RGB,
+	}, {
+		.code = MEDIA_BUS_FMT_SGRBG8_1X8,
+		.output_format = MT9M114_CAM_OUTPUT_FORMAT_BAYER_FORMAT_PROCESSED8
+			       | MT9M114_CAM_OUTPUT_FORMAT_FORMAT_BAYER,
+		.flags = MT9M114_FMT_FLAG_PARALLEL | MT9M114_FMT_FLAG_CSI2,
+	}, {
+		/* Keep the format compatible with the IFP sink pad last. */
+		.code = MEDIA_BUS_FMT_SGRBG10_1X10,
+		.output_format = MT9M114_CAM_OUTPUT_FORMAT_BAYER_FORMAT_RAWR10
+			| MT9M114_CAM_OUTPUT_FORMAT_FORMAT_BAYER,
+		.flags = MT9M114_FMT_FLAG_PARALLEL | MT9M114_FMT_FLAG_CSI2,
+	}
 };
 
 static inline struct mt9m114 *to_mt9m114(struct v4l2_subdev *sd)
@@ -735,16 +807,48 @@ static int mt9m114_s_frame_interval(struct v4l2_subdev *sd,
 }
 
 static int mt9m114_enum_mbus_code(struct v4l2_subdev *sd,
-				 struct v4l2_subdev_state *sd_state,
-				 struct v4l2_subdev_mbus_code_enum *code)
+				      struct v4l2_subdev_state *state,
+				      struct v4l2_subdev_mbus_code_enum *code)
 {
-	if (code->pad != 0)
-		return -EINVAL;
-	if (code->index >= ARRAY_SIZE(mt9m114_formats))
+	const unsigned int num_formats = ARRAY_SIZE(mt9m114_format_infos);
+	struct mt9m114 *sensor = to_mt9m114(sd);
+	unsigned int index = 0;
+	unsigned int flag;
+	unsigned int i;
+
+	switch (code->pad) {
+	case 0:
+		if (code->index != 0)
+			return -EINVAL;
+
+		code->code = mt9m114_format_infos[num_formats - 1].code;
+		return 0;
+
+	case 1:
+		if (sensor->bus_cfg.bus_type == V4L2_MBUS_CSI2_DPHY)
+			flag = MT9M114_FMT_FLAG_CSI2;
+		else
+			flag = MT9M114_FMT_FLAG_PARALLEL;
+
+		for (i = 0; i < num_formats; ++i) {
+			const struct mt9m114_format_info *info =
+				&mt9m114_format_infos[i];
+
+			if (info->flags & flag) {
+				if (index == code->index) {
+					code->code = info->code;
+					return 0;
+				}
+
+				index++;
+			}
+		}
+
 		return -EINVAL;
 
-	code->code = mt9m114_formats[code->index].mbus_code;
-	return 0;
+	default:
+		return -EINVAL;
+	}
 }
 
 static int mt9m114_get_fmt(struct v4l2_subdev *sd,
@@ -946,6 +1050,7 @@ static int mt9m114_init_config(struct mt9m114 *sensor)
 {
 	struct i2c_client *client = sensor->i2c_client;
 	struct v4l2_mbus_framefmt *fmt = &sensor->fmt;
+	u32 value;
 	u16 output_fmt;
 	int ret;
 
@@ -955,8 +1060,22 @@ static int mt9m114_init_config(struct mt9m114 *sensor)
 		return ret;
 	}
 
+	/* Configure the output mode. */
+	/* borrowed from mainline driver */
+	if (sensor->bus_cfg.bus_type == V4L2_MBUS_CSI2_DPHY) {
+		value = MT9M114_CAM_PORT_PORT_SELECT_MIPI
+		      | MT9M114_CAM_PORT_CHAN_NUM(0)
+		      | 0x8000;
+		if (!(sensor->bus_cfg.bus.mipi_csi2.flags &
+		      V4L2_MBUS_CSI2_NONCONTINUOUS_CLOCK))
+			value |= MT9M114_CAM_PORT_CONT_MIPI_CLK;
+	} else {
+		value = MT9M114_CAM_PORT_PORT_SELECT_PARALLEL
+		      | MT9M114_CAM_PORT_PIXCLK_GATE
+		      | 0x8000; /* 0x8020 */
 	/* PIXCLK is only generated for valid output pixels. */
-	mt9m114_write16(client, MT9M114_CAM_PORT_OUTPUT_CONTROL, 0x8020);
+	}
+	mt9m114_write16(client, MT9M114_CAM_PORT_OUTPUT_CONTROL, value);
 
 	/* Config 720P as default resolution */
 	ret = mt9m114_set_res(client, fmt->width, fmt->height);
@@ -998,12 +1117,54 @@ static const struct media_entity_operations mt9m114_sd_media_ops = {
 	.link_setup = mt9m114_link_setup,
 };
 
+/* borrowed from mainline driver */
+static int mt9m114_parse_dt(struct mt9m114 *sensor)
+{
+	struct fwnode_handle *fwnode = dev_fwnode(&sensor->i2c_client->dev);
+	struct fwnode_handle *ep;
+	int ret;
+
+	ep = fwnode_graph_get_next_endpoint(fwnode, NULL);
+	if (!ep) {
+		dev_err(&sensor->i2c_client->dev, "No endpoint found\n");
+		return -EINVAL;
+	}
+
+	sensor->bus_cfg.bus_type = V4L2_MBUS_UNKNOWN;
+	ret = v4l2_fwnode_endpoint_alloc_parse(ep, &sensor->bus_cfg);
+	fwnode_handle_put(ep);
+	if (ret < 0) {
+		dev_err(&sensor->i2c_client->dev, "Failed to parse endpoint\n");
+		goto error;
+	}
+
+	switch (sensor->bus_cfg.bus_type) {
+	case V4L2_MBUS_CSI2_DPHY:
+	case V4L2_MBUS_PARALLEL:
+		break;
+
+	default:
+		dev_err(&sensor->i2c_client->dev, "unsupported bus type %u\n",
+			sensor->bus_cfg.bus_type);
+		ret = -EINVAL;
+		goto error;
+	}
+
+	return 0;
+
+error:
+	v4l2_fwnode_endpoint_free(&sensor->bus_cfg);
+	return ret;
+}
+
 static int mt9m114_probe(struct i2c_client *client)
 {
 	struct mt9m114 *sensor;
 	struct v4l2_subdev *sd;
 	struct v4l2_mbus_framefmt *fmt;
 	int ret;
+
+	dev_err(&client->dev, "MT9M114 probe\n");
 
 	sensor = devm_kzalloc(&client->dev, sizeof(*sensor), GFP_KERNEL);
 	if (!sensor)
@@ -1016,6 +1177,10 @@ static int mt9m114_probe(struct i2c_client *client)
 		dev_err(&client->dev, "failed to get regulators\n");
 		return ret;
 	}
+
+	ret = mt9m114_parse_dt(sensor);
+	if (ret < 0)
+		return ret;
 
 	ret = mt9m114_set_power(sensor, true);
 	if (ret < 0)
@@ -1076,6 +1241,7 @@ static int mt9m114_probe(struct i2c_client *client)
 
 fail:
 	mt9m114_set_power(sensor, false);
+	dev_err(&client->dev, "MT9M114 probe failed\n");
 	return ret;
 }
 

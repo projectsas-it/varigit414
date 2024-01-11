@@ -142,6 +142,7 @@ dtb-$(CONFIG_ARCH_MXC) += imx8mp-evk.dtb imx8mp-evk-rm67191.dtb imx8mp-evk-it626
 			  imx8mp-var-dart-dt8mcustomboard.dtb \
 			  imx8mp-var-dart-dt8mcustomboard-legacy-basler-isi0.dtb \
 			  imx8mp-var-dart-dt8mcustomboard-basler-isi0.dtb \
+			  imx8mp-var-dart-tecniplast.dtb \
 			  imx8mp-var-som-symphony-basler-isp0.dtb \
 			  imx8mp-var-som-symphony-basler-isp0-m7.dtb \
 			  imx8mp-var-som-symphony.dtb \
