@@ -245,6 +245,9 @@
 #define MAX14830_BRGCFG_CLKDIS_BIT	(1 << 6) /* Clock Disable */
 #define MAX14830_REV_ID			(0xb0)
 
+/* USER DEFINITIONs */
+#define TIMEOUT_RX_CHARS		(20) /* RX timeout */
+
 struct max310x_devtype {
 	char	name[9];
 	int	nr;
@@ -292,6 +295,7 @@ static u8 max310x_port_read(struct uart_port *port, u8 reg)
 	unsigned int val = 0;
 
 	regmap_read(one->regmap, reg, &val);
+	dev_dbg(port->dev, "reg read r=0x%x 0x%x\n", reg, val);
 
 	return val;
 }
@@ -299,6 +303,7 @@ static u8 max310x_port_read(struct uart_port *port, u8 reg)
 static void max310x_port_write(struct uart_port *port, u8 reg, u8 val)
 {
 	struct max310x_one *one = to_max310x_port(port);
+	dev_dbg(port->dev, "reg write r=0x%x 0x%x\n", reg, val);
 
 	regmap_write(one->regmap, reg, val);
 }
@@ -308,6 +313,7 @@ static void max310x_port_update(struct uart_port *port, u8 reg, u8 mask, u8 val)
 	struct max310x_one *one = to_max310x_port(port);
 
 	regmap_update_bits(one->regmap, reg, mask, val);
+	dev_dbg(port->dev, "reg upd r=0x%x m=0x%x 0x%x\n", reg, mask, val);
 }
 
 static int max3107_detect(struct device *dev)
@@ -431,7 +437,7 @@ static const struct max310x_devtype max3108_devtype = {
 static const struct max310x_devtype max3109_devtype = {
 	.name	= "MAX3109",
 	.nr	= 2,
-	.mode1	= MAX310X_MODE1_AUTOSLEEP_BIT,
+	.mode1	= 0,
 	.detect	= max3109_detect,
 	.power	= max310x_power,
 };
@@ -496,6 +502,11 @@ static bool max310x_reg_precious(struct device *dev, unsigned int reg)
 	}
 
 	return false;
+}
+
+static bool max310x_reg_noinc(struct device *dev, unsigned int reg)
+{
+	return reg == MAX310X_RHR_REG;
 }
 
 static int max310x_set_baud(struct uart_port *port, int baud)
@@ -624,14 +635,14 @@ static void max310x_batch_write(struct uart_port *port, u8 *txbuf, unsigned int 
 {
 	struct max310x_one *one = to_max310x_port(port);
 
-	regmap_raw_write(one->regmap, MAX310X_THR_REG, txbuf, len);
+	regmap_noinc_write(one->regmap, MAX310X_THR_REG, txbuf, len);
 }
 
 static void max310x_batch_read(struct uart_port *port, u8 *rxbuf, unsigned int len)
 {
 	struct max310x_one *one = to_max310x_port(port);
 
-	regmap_raw_read(one->regmap, MAX310X_RHR_REG, rxbuf, len);
+	regmap_noinc_read(one->regmap, MAX310X_RHR_REG, rxbuf, len);
 }
 
 static void max310x_handle_rx(struct uart_port *port, unsigned int rxlen)
@@ -788,18 +799,20 @@ static irqreturn_t max310x_port_irq(struct max310x_port *s, int portno)
 		/* Read IRQ status & RX FIFO level */
 		ists = max310x_port_read(port, MAX310X_IRQSTS_REG);
 		rxlen = max310x_port_read(port, MAX310X_RXFIFOLVL_REG);
-		if (!ists && !rxlen)
+		// rxlen<TIMEOUT_RX_CHARS can be checked ONLY if MAX310X_LSR_RXTO_BIT was enabled - TO BE IMPROVED */
+		if (!ists && rxlen<(TIMEOUT_RX_CHARS/2)) //if (!ists && !rxlen)
 			break;
 
 		res = IRQ_HANDLED;
 
+		lsr = max310x_port_read(port, MAX310X_LSR_IRQSTS_REG);
 		if (ists & MAX310X_IRQ_CTS_BIT) {
-			lsr = max310x_port_read(port, MAX310X_LSR_IRQSTS_REG);
 			uart_handle_cts_change(port,
 					       !!(lsr & MAX310X_LSR_CTS_BIT));
 		}
 		if (rxlen)
 			max310x_handle_rx(port, rxlen);
+		dev_dbg(port->dev, "irq status 0x%x lsr 0x%x rxlen %d\n", ists, lsr, rxlen);
 		if (ists & MAX310X_IRQ_TXEMPTY_BIT)
 			max310x_start_tx(port);
 	} while (1);
@@ -1038,9 +1051,9 @@ static int max310x_startup(struct uart_port *port)
 	max310x_port_update(port, MAX310X_MODE1_REG,
 			    MAX310X_MODE1_TRNSCVCTRL_BIT, 0);
 
-	/* Configure MODE2 register & Reset FIFOs*/
-	val = MAX310X_MODE2_RXEMPTINV_BIT | MAX310X_MODE2_FIFORST_BIT;
-	max310x_port_write(port, MAX310X_MODE2_REG, val);
+	/* Reset FIFOs */
+	max310x_port_write(port, MAX310X_MODE2_REG,
+			    MAX310X_MODE2_FIFORST_BIT);
 	max310x_port_update(port, MAX310X_MODE2_REG,
 			    MAX310X_MODE2_FIFORST_BIT, 0);
 
@@ -1068,8 +1081,27 @@ static int max310x_startup(struct uart_port *port)
 	/* Clear IRQ status register */
 	max310x_port_read(port, MAX310X_IRQSTS_REG);
 
-	/* Enable RX, TX, CTS change interrupts */
-	val = MAX310X_IRQ_RXEMPTY_BIT | MAX310X_IRQ_TXEMPTY_BIT;
+	/*
+	 * Let's ask for an interrupt after a timeout equivalent to
+	 * the receiving time of 4 characters after the last character
+	 * has been received.
+	 */
+	max310x_port_write(port, MAX310X_RXTO_REG, TIMEOUT_RX_CHARS);
+
+	/*
+	 * Make sure we also get RX interrupts when the RX FIFO is
+	 * filling up quickly, so get an interrupt when half of the RX
+	 * FIFO has been filled in.
+	 */
+	max310x_port_write(port, MAX310X_FIFOTRIGLVL_REG,
+			   MAX310X_FIFOTRIGLVL_RX(MAX310X_FIFO_SIZE / 2));
+
+	/* Enable RX timeout interrupt in LSR */
+	max310x_port_write(port, MAX310X_LSR_IRQEN_REG,
+			   MAX310X_LSR_RXTO_BIT);
+
+	/* Enable LSR, RX FIFO trigger, CTS change interrupts */
+	val = MAX310X_IRQ_LSR_BIT | MAX310X_IRQ_RXFIFO_BIT | MAX310X_IRQ_TXEMPTY_BIT;
 	max310x_port_write(port, MAX310X_IRQEN_REG, val | MAX310X_IRQ_CTS_BIT);
 
 	return 0;
@@ -1440,6 +1472,8 @@ static struct regmap_config regcfg = {
 	.writeable_reg = max310x_reg_writeable,
 	.volatile_reg = max310x_reg_volatile,
 	.precious_reg = max310x_reg_precious,
+	.writeable_noinc_reg = max310x_reg_noinc,
+	.readable_noinc_reg = max310x_reg_noinc,
 };
 
 #ifdef CONFIG_SPI_MASTER
