@@ -457,7 +457,7 @@
 		reg = <0>;
 		clocks = <&spi_uart_clk>;
 		clock-names = "osc";
-		spi-max-frequency = <12000000>;
+		spi-max-frequency = <26000000>;
 		pinctrl-0 = <&pinctrl_ext_uart1>;
 		interrupt-parent = <&gpio1>;
 		interrupts = <11 IRQ_TYPE_EDGE_FALLING>;
